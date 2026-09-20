@@ -38,6 +38,7 @@ async def health_check():
         "status": "healthy",
         "service": "project-momos-backend",
         "pocketbase_url": settings.POCKETBASE_URL,
+        "version": "v1"
     }
 
 # Mount React static frontend if dist/ directory exists
