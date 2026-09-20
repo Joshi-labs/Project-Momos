@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { api } from '../api';
 import {
   ShieldAlert,
   CheckCircle2,
@@ -22,31 +22,13 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState(null);
 
   const fetchTickets = useCallback(async () => {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      return;
-    }
-
     try {
       // 1. Fetch pending tickets (FIFO queue)
-      const { data: pending, error: pendingErr } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
-
-      if (pendingErr) throw pendingErr;
+      const pending = await api.getAdminPendingTickets();
       setPendingTickets(pending || []);
 
       // 2. Fetch recently processed tickets
-      const { data: history, error: historyErr } = await supabase
-        .from('tickets')
-        .select('*')
-        .neq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(24);
-
-      if (historyErr) throw historyErr;
+      const history = await api.getAdminHistoryTickets(24);
       setHistoryTickets(history || []);
 
       setLastUpdated(new Date());
@@ -80,12 +62,7 @@ export default function AdminDashboard() {
     setToast(null);
 
     try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status: newStatus })
-        .eq('id', ticketId);
-
-      if (error) throw error;
+      await api.updateTicketStatus(ticketId, newStatus);
 
       setToast({
         type: 'success',

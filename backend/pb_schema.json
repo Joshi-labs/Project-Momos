@@ -1,0 +1,63 @@
+[
+  {
+    "name": "tickets",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "name": "user",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": true,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "name": "category",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "Steam Veg",
+            "Afghani",
+            "Fried"
+          ]
+        }
+      },
+      {
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_tickets_user ON tickets (user)",
+      "CREATE INDEX idx_tickets_status ON tickets (status)",
+      "CREATE INDEX idx_tickets_created ON tickets (created)"
+    ],
+    "listRule": "@request.auth.id != '' && (@request.auth.id = user || @request.auth.role = 'admin')",
+    "viewRule": "@request.auth.id != '' && (@request.auth.id = user || @request.auth.role = 'admin')",
+    "createRule": "@request.auth.id != '' && @request.auth.id = user && status = 'pending'",
+    "updateRule": "@request.auth.id != '' && @request.auth.role = 'admin'",
+    "deleteRule": "@request.auth.id != '' && @request.auth.role = 'admin'"
+  }
+]

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { api } from '../api';
 import {
   Award,
   Flame,
@@ -54,19 +54,13 @@ export default function UserDashboard() {
   const [redeemModal, setRedeemModal] = useState(null);
 
   const fetchMyTickets = useCallback(async () => {
-    if (!user || !isSupabaseConfigured) {
+    if (!user) {
       setLoadingTickets(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await api.getMyTickets();
       setTickets(data || []);
     } catch (err) {
       console.error('Failed to load tickets:', err);
@@ -105,31 +99,13 @@ export default function UserDashboard() {
     if (!user) return;
     setFeedback(null);
 
-    if (!isSupabaseConfigured) {
-      setFeedback({
-        type: 'error',
-        text: 'Supabase credentials missing in .env. Please check configuration.',
-      });
-      return;
-    }
-
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('tickets').insert([
-        {
-          user_id: user.id,
-          category: selectedCategory,
-          status: 'pending',
-        },
-      ]);
-
-      if (error) throw error;
-
+      await api.claimTicket(selectedCategory);
       setFeedback({
         type: 'success',
         text: `Claim submitted for ${selectedCategory}! The truck chef will approve it in seconds.`,
       });
-
       await fetchMyTickets();
     } catch (err) {
       setFeedback({
