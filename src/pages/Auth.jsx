@@ -64,10 +64,9 @@ export default function Auth() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      navigate('/user', { replace: true });
+      // Page will redirect to Google — if we reach here something unexpected happened
     } catch (err) {
       setErrorMsg(err.message || 'Google sign-in failed. Ensure Google OAuth2 is configured in PocketBase.');
-    } finally {
       setGoogleLoading(false);
     }
   };

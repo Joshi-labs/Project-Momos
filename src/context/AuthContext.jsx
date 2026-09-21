@@ -13,8 +13,23 @@ export const AuthProvider = ({ children }) => {
       setUser(record);
     }, true);
 
-    // Initial check: if valid token exists, attempt refresh in background to verify validity
-    const verifySession = async () => {
+    const initSession = async () => {
+      // Step 1: Check if we're returning from a Google OAuth redirect (?code=...)
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('code')) {
+        try {
+          const result = await api.handleOAuthRedirect();
+          if (result && result.user) {
+            setUser(result.user);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('OAuth redirect handling failed:', err);
+        }
+      }
+
+      // Step 2: Normal session verification
       if (pb.authStore.isValid && pb.authStore.token) {
         try {
           const freshUser = await api.getMe();
@@ -28,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
 
-    verifySession();
+    initSession();
 
     return () => {
       unsubscribe();
@@ -51,9 +66,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signInWithGoogle = async () => {
-    const res = await api.loginWithGoogle();
-    setUser(res.user);
-    return res;
+    // This redirects the page to Google — the page will reload and
+    // initSession() in the useEffect above will complete the auth exchange.
+    await api.loginWithGoogleRedirect();
+    // Execution won't reach here because the page navigates away
   };
 
   const signOut = () => {

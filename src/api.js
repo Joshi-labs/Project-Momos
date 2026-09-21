@@ -51,13 +51,77 @@ export const api = {
     }
   },
 
-  async loginWithGoogle() {
+  // Same-window OAuth2 redirect flow (no popup)
+  // Step 1: Redirect user to Google in the same tab
+  async loginWithGoogleRedirect() {
     try {
-      const authData = await pb.collection('users').authWithOAuth2({ provider: 'google' });
+      const authMethods = await pb.collection('users').listAuthMethods();
+      const providers = authMethods?.oauth2?.providers || [];
+      const google = providers.find((p) => p.name === 'google');
+      if (!google) {
+        throw new Error('Google OAuth2 is not configured in PocketBase. Enable it in Settings → Auth providers.');
+      }
+
+      // Use our app's URL as the redirect target (same window)
+      const redirectUrl = window.location.origin + window.location.pathname;
+
+      // Store verifier + provider so we can complete the exchange when Google sends us back
+      localStorage.setItem('pb_oauth_provider', google.name);
+      localStorage.setItem('pb_oauth_verifier', google.codeVerifier);
+      localStorage.setItem('pb_oauth_redirect', redirectUrl);
+
+      // Rewrite redirect_uri in the auth URL to point back to our app
+      const authUrl = new URL(google.authURL);
+      authUrl.searchParams.set('redirect_uri', redirectUrl);
+
+      // Navigate in the same tab
+      window.location.href = authUrl.toString();
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
+  },
+
+  // Step 2: Called on page load to complete the OAuth exchange if code is present
+  async handleOAuthRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return null;
+
+    const provider = localStorage.getItem('pb_oauth_provider');
+    const codeVerifier = localStorage.getItem('pb_oauth_verifier');
+    const redirectUrl = localStorage.getItem('pb_oauth_redirect');
+
+    if (!provider || !codeVerifier || !redirectUrl) {
+      // No stored OAuth state — clear the URL and bail
+      window.history.replaceState({}, '', window.location.pathname + (window.location.hash || ''));
+      return null;
+    }
+
+    // Clean up stored OAuth state
+    localStorage.removeItem('pb_oauth_provider');
+    localStorage.removeItem('pb_oauth_verifier');
+    localStorage.removeItem('pb_oauth_redirect');
+
+    // Clean the URL so the code doesn't linger
+    window.history.replaceState({}, '', window.location.pathname + '#/user');
+
+    try {
+      const authData = await pb.collection('users').authWithOAuth2Code(
+        provider,
+        code,
+        codeVerifier,
+        redirectUrl,
+        { role: 'user' }, // createData for new users
+      );
       return { token: authData.token, user: authData.record };
     } catch (err) {
       throw new Error(formatPbError(err));
     }
+  },
+
+  // Legacy alias kept for compatibility
+  async loginWithGoogle() {
+    return this.loginWithGoogleRedirect();
   },
 
   async getMe() {
