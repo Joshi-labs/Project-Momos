@@ -78,7 +78,7 @@ export default function Home() {
                   </div>
                   <div>
                     <span className="text-xs font-black text-white block uppercase">MOMO_PASS // #088</span>
-                    <span className="text-[10px] text-zinc-400">COUNTER DIGITAL TICKET</span>
+                    <span className="text-[10px] text-zinc-400">COUNTER DIGITAL PASS</span>
                   </div>
                 </div>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">
@@ -137,7 +137,7 @@ export default function Home() {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-500 uppercase">
-              1 Plate = 1 Stamp Ticket
+              1 Plate = 1 Stamp
             </div>
           </div>
 

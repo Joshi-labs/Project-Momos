@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Flame, Mail, Lock, LogIn, UserPlus, AlertCircle, CheckCircle2, Award, QrCode } from 'lucide-react';
+import { Flame, Mail, Lock, User as UserIcon, LogIn, UserPlus, AlertCircle, CheckCircle2, Award, QrCode } from 'lucide-react';
 
 export default function Auth() {
-  const { user, signIn, signUp, signInWithGoogle, isSupabaseConfigured } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const [isSignUp, setIsSignUp] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -26,11 +28,6 @@ export default function Auth() {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!isSupabaseConfigured) {
-      setErrorMsg('Supabase is not configured yet. Add VITE_SUPABASE_URL and key to .env');
-      return;
-    }
-
     if (!email || !password) {
       setErrorMsg('Please enter both email and password.');
       return;
@@ -41,16 +38,16 @@ export default function Auth() {
       return;
     }
 
+    if (isSignUp && password !== passwordConfirm) {
+      setErrorMsg('Passwords do not match.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (isSignUp) {
-        const { session } = await signUp(email, password);
-        if (session) {
-          navigate('/user', { replace: true });
-        } else {
-          setSuccessMsg('Sign-up successful! Check your email inbox to confirm or sign in.');
-          setIsSignUp(false);
-        }
+        await signUp(email, password, passwordConfirm, name);
+        navigate('/user', { replace: true });
       } else {
         await signIn(email, password);
         navigate('/user', { replace: true });
@@ -64,15 +61,13 @@ export default function Auth() {
 
   const handleGoogleSignIn = async () => {
     setErrorMsg('');
-    if (!isSupabaseConfigured) {
-      setErrorMsg('Supabase is not configured yet. Please check your credentials.');
-      return;
-    }
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
+      navigate('/user', { replace: true });
     } catch (err) {
-      setErrorMsg(err.message || 'Google sign-in failed. Ensure Google provider is enabled in Supabase.');
+      setErrorMsg(err.message || 'Google sign-in failed. Ensure Google OAuth2 is configured in PocketBase.');
+    } finally {
       setGoogleLoading(false);
     }
   };
@@ -197,6 +192,27 @@ export default function Auth() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-300 uppercase mb-1.5">
+                    Your Name (Optional)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Rahul Sharma"
+                      autoComplete="name"
+                      className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400 transition-all font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[11px] font-bold text-zinc-300 uppercase mb-1.5">
                   Email Address
@@ -236,6 +252,28 @@ export default function Auth() {
                   />
                 </div>
               </div>
+
+              {isSignUp && (
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-300 uppercase mb-1.5">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      value={passwordConfirm}
+                      onChange={(e) => setPasswordConfirm(e.target.value)}
+                      placeholder="Repeat password"
+                      autoComplete="new-password"
+                      className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400 transition-all font-mono"
+                    />
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"

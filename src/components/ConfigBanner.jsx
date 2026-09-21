@@ -1,6 +1,6 @@
 import React from 'react';
 
 export default function ConfigBanner() {
-  // In FastAPI + PocketBase setup, backend handles its own config
+  // PocketBase handles configuration directly via PB_URL
   return null;
 }

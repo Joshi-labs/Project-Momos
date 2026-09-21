@@ -47,45 +47,62 @@ export default function UserDashboard() {
     preselect && CATEGORIES.some((c) => c.name === preselect) ? preselect : 'Steam Veg'
   );
 
-  const [tickets, setTickets] = useState([]);
-  const [loadingTickets, setLoadingTickets] = useState(true);
+  const [stamps, setStamps] = useState([]);
+  const [loadingStamps, setLoadingStamps] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [redeemModal, setRedeemModal] = useState(null);
 
-  const fetchMyTickets = useCallback(async () => {
+  const fetchMyStamps = useCallback(async () => {
     if (!user) {
-      setLoadingTickets(false);
+      setLoadingStamps(false);
       return;
     }
 
     try {
-      const data = await api.getMyTickets();
-      setTickets(data || []);
+      const data = await api.getMyStamps();
+      setStamps(data || []);
     } catch (err) {
-      console.error('Failed to load tickets:', err);
+      console.error('Failed to load stamps:', err);
     } finally {
-      setLoadingTickets(false);
+      setLoadingStamps(false);
     }
   }, [user]);
 
   useEffect(() => {
-    fetchMyTickets();
+    fetchMyStamps();
+
+    // Subscribe to real-time PocketBase stamp changes
+    const unsub = api.subscribeStamps((e) => {
+      // Whenever a stamp is created/updated/deleted for this user
+      if (e.record && (!e.record.user || e.record.user === user?.id)) {
+        fetchMyStamps();
+      }
+    });
+
     const interval = setInterval(() => {
-      fetchMyTickets();
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [fetchMyTickets]);
+      fetchMyStamps();
+    }, 12000);
+
+    return () => {
+      clearInterval(interval);
+      if (typeof unsub === 'function') {
+        unsub();
+      } else {
+        api.unsubscribeStamps();
+      }
+    };
+  }, [fetchMyStamps, user?.id]);
 
   const stampCounts = useMemo(() => {
     const counts = { 'Steam Veg': 0, Afghani: 0, Fried: 0 };
-    tickets.forEach((t) => {
-      if (t.status === 'approved' && counts[t.category] !== undefined) {
-        counts[t.category] += 1;
+    stamps.forEach((s) => {
+      if (s.status === 'approved' && counts[s.category] !== undefined) {
+        counts[s.category] += 1;
       }
     });
     return counts;
-  }, [tickets]);
+  }, [stamps]);
 
   const totalStampsAll = useMemo(() => {
     return Object.values(stampCounts).reduce((a, b) => a + b, 0);
@@ -95,22 +112,22 @@ export default function UserDashboard() {
     return Object.values(stampCounts).reduce((acc, count) => acc + Math.floor(count / 5), 0);
   }, [stampCounts]);
 
-  const handleClaimTicket = async () => {
+  const handleClaimStamp = async () => {
     if (!user) return;
     setFeedback(null);
 
     setSubmitting(true);
     try {
-      await api.claimTicket(selectedCategory);
+      await api.claimStamp(selectedCategory);
       setFeedback({
         type: 'success',
-        text: `Claim submitted for ${selectedCategory}! The truck chef will approve it in seconds.`,
+        text: `Stamp request submitted for ${selectedCategory}! The truck chef will approve it in seconds.`,
       });
-      await fetchMyTickets();
+      await fetchMyStamps();
     } catch (err) {
       setFeedback({
         type: 'error',
-        text: err.message || 'Failed to submit claim ticket. Please try again.',
+        text: err.message || 'Failed to submit stamp claim. Please try again.',
       });
     } finally {
       setSubmitting(false);
@@ -123,7 +140,7 @@ export default function UserDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-lg bg-amber-400 text-black font-black text-lg border-2 border-black flex items-center justify-center shrink-0">
-              {user?.email?.[0]?.toUpperCase() || 'M'}
+              {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'M'}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -135,7 +152,7 @@ export default function UserDashboard() {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-mono truncate max-w-sm">
-                ID: {user?.email}
+                ID: {user?.email} {user?.name ? `(${user.name})` : ''}
               </p>
             </div>
           </div>
@@ -153,12 +170,12 @@ export default function UserDashboard() {
 
             <button
               type="button"
-              onClick={fetchMyTickets}
-              disabled={loadingTickets}
+              onClick={fetchMyStamps}
+              disabled={loadingStamps}
               className="p-3 rounded-lg bg-zinc-900 border-2 border-zinc-700 text-zinc-300 hover:text-white active:scale-95 transition-all shrink-0"
               title="Refresh Stamps"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingTickets ? 'animate-spin text-amber-400' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loadingStamps ? 'animate-spin text-amber-400' : ''}`} />
             </button>
           </div>
         </div>
@@ -170,11 +187,11 @@ export default function UserDashboard() {
             <div className="flex items-center gap-2 mb-2 font-mono">
               <PlusCircle className="w-5 h-5 text-amber-400" />
               <h2 className="text-sm font-black text-white uppercase tracking-wider">
-                Claim Purchase Ticket
+                Claim Purchase Stamp
               </h2>
             </div>
             <p className="text-xs text-zinc-400 mb-5 leading-relaxed">
-              Standing at the truck counter? Tap the momo style you ordered to submit a stamp verification ticket.
+              Standing at the truck counter? Tap the momo style you ordered to submit a stamp verification request.
             </p>
 
             {feedback && (
@@ -217,7 +234,7 @@ export default function UserDashboard() {
 
             <button
               type="button"
-              onClick={handleClaimTicket}
+              onClick={handleClaimStamp}
               disabled={submitting}
               className="w-full py-3.5 px-4 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black font-mono text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
@@ -226,7 +243,7 @@ export default function UserDashboard() {
               ) : (
                 <>
                   <Flame className="w-4 h-4 fill-black" />
-                  <span>[ SUBMIT {selectedCategory.toUpperCase()} CLAIM ]</span>
+                  <span>[ SUBMIT {selectedCategory.toUpperCase()} STAMP ]</span>
                 </>
               )}
             </button>
@@ -235,7 +252,7 @@ export default function UserDashboard() {
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-400 space-y-1">
             <span className="text-amber-400 font-bold block uppercase">// COUNTER NOTICE:</span>
             <p className="text-[11px] leading-relaxed">
-              Submitting claims creates a live pending ticket on the chef’s counter screen. Once verified, this card stamps automatically.
+              Submitting claims creates a live pending stamp request on the chef’s counter screen. Once verified, this card stamps automatically.
             </p>
           </div>
         </div>
@@ -336,48 +353,51 @@ export default function UserDashboard() {
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)]">
             <h3 className="text-xs font-black text-white uppercase font-mono mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4 text-zinc-400" />
-              Ticket Claim Activity Log
+              Stamp Activity Log
             </h3>
 
-            {tickets.length === 0 ? (
+            {stamps.length === 0 ? (
               <div className="text-center py-6 text-xs text-zinc-500 font-mono">
-                [ NO CLAIMS LOGGED YET // ORDER AT COUNTER TO START ]
+                [ NO STAMPS LOGGED YET // ORDER AT COUNTER TO START ]
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-                {tickets.slice(0, 6).map((t) => {
-                  const dateStr = new Date(t.created_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  });
+                {stamps.slice(0, 6).map((s) => {
+                  const timestamp = s.created || s.created_at;
+                  const dateStr = timestamp
+                    ? new Date(timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Recent';
 
                   return (
                     <div
-                      key={t.id}
+                      key={s.id}
                       className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800"
                     >
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">
-                          {t.category === 'Steam Veg' ? '🥟' : t.category === 'Afghani' ? '🥘' : '🔥'}
+                          {s.category === 'Steam Veg' ? '🥟' : s.category === 'Afghani' ? '🥘' : '🔥'}
                         </span>
                         <div>
-                          <p className="font-bold text-zinc-200">{t.category}</p>
+                          <p className="font-bold text-zinc-200">{s.category}</p>
                           <span className="text-[10px] text-zinc-500">{dateStr}</span>
                         </div>
                       </div>
 
                       <div>
-                        {t.status === 'pending' && (
+                        {s.status === 'pending' && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
                             PENDING
                           </span>
                         )}
-                        {t.status === 'approved' && (
+                        {s.status === 'approved' && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
                             +1 STAMP
                           </span>
                         )}
-                        {t.status === 'rejected' && (
+                        {s.status === 'rejected' && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 border border-red-700 text-red-300">
                             REJECTED
                           </span>

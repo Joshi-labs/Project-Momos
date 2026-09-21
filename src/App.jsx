@@ -1,11 +1,9 @@
-import React, { useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { supabase } from './supabaseClient';
 import Navbar from './components/Navbar';
 import ConfigBanner from './components/ConfigBanner';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Loader2 } from 'lucide-react';
 
 import Home from './pages/Home';
 import Menu from './pages/Menu';
@@ -14,52 +12,9 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
 function AppContent() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Listen for auth state changes from Supabase (SIGNED_IN / INITIAL_SESSION)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        window.location.hash = '#/user';
-        navigate('/user', { replace: true });
-      } else if (event === 'INITIAL_SESSION' && session && window.location.hash.includes('access_token')) {
-        window.location.hash = '#/user';
-        navigate('/user', { replace: true });
-      }
-    });
-
-    // Secondary fallback in case hash wasn't cleared before mount
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-      const hash = window.location.hash.replace(/^[#/]+/, '');
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-
-      if (accessToken) {
-        supabase.auth
-          .setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || '',
-          })
-          .then(({ data }) => {
-            if (data?.session) {
-              window.location.hash = '#/user';
-              navigate('/user', { replace: true });
-            }
-          });
-      }
-    }
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [navigate]);
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-amber-500 selection:text-zinc-950">
-      {/* Banner if Supabase env credentials are not set */}
+      {/* Banner if configuration notice is needed */}
       <ConfigBanner />
 
       {/* Responsive Navbar */}
@@ -93,20 +48,8 @@ function AppContent() {
             }
           />
 
-          {/* Fallback route - wait for session resolution if OAuth tokens in hash */}
-          <Route
-            path="*"
-            element={
-              window.location.hash.includes('access_token') ? (
-                <div className="min-h-[60vh] flex flex-col items-center justify-center font-mono text-xs text-amber-400">
-                  <Loader2 className="w-8 h-8 animate-spin mb-3 text-amber-400" />
-                  <span className="font-bold tracking-wider uppercase">[ VERIFYING GOOGLE SESSION... ]</span>
-                </div>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 
@@ -123,12 +66,12 @@ function AppContent() {
             <span>Buy 5 Plates = 1 Free Plate</span>
             <span>•</span>
             <a
-              href="https://momos.vpjoshi.in"
+              href="https://pb.momoos.shop"
               target="_blank"
               rel="noreferrer"
               className="text-amber-400 hover:text-amber-300 font-mono"
             >
-              momos.vpjoshi.in
+              PocketBase Backend
             </a>
           </div>
         </div>

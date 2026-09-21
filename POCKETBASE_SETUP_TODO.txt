@@ -1,0 +1,158 @@
+================================================================================
+                    PROJECT MOMOS - POCKETBASE SETUP TODO GUIDE
+================================================================================
+
+PocketBase Host URL: https://pb.momoos.shop
+Admin Dashboard URL: https://pb.momoos.shop/_/
+
+Follow this step-by-step checklist inside your PocketBase Admin Dashboard to
+configure the database collections, fields, API rules, and authentication.
+
+--------------------------------------------------------------------------------
+STEP 1: Log in to PocketBase Admin Dashboard
+--------------------------------------------------------------------------------
+[ ] 1. Open your browser and go to: https://pb.momoos.shop/_/
+[ ] 2. If this is a fresh instance, create your initial Super-Admin credentials.
+       If already created, log in with your admin credentials.
+
+--------------------------------------------------------------------------------
+STEP 2: Configure the "users" Auth Collection (MUST BE DONE FIRST!)
+--------------------------------------------------------------------------------
+PocketBase includes a built-in "users" collection (Auth collection).
+We only need to add a "role" field so we can distinguish customers from chefs.
+
+[ ] 1. In the left sidebar, click on the "users" collection.
+[ ] 2. Click the gear / "Edit collection" icon (or "Settings").
+[ ] 3. Under "Fields", click "+ New field":
+       - Type: Select
+       - Field Name: role
+       - Required / Non-empty: Check YES
+       - Max Select: 1
+       - Options: Add two options:
+           * user
+           * admin
+       - Default value: user
+[ ] 4. Under "API Rules" tab for "users":
+       - List/Search rule: Leave empty "" (allow authenticated users: @request.auth.id != "")
+       - View rule: @request.auth.id != ""
+       - Create (Sign-up) rule: Leave completely blank (Unlock icon: everyone can register)
+       - Update rule: @request.auth.id = id || @request.auth.role = "admin"
+       - Delete rule: @request.auth.role = "admin"
+[ ] 5. Click "Save changes".
+
+--------------------------------------------------------------------------------
+STEP 3: Configure Auth Providers in PocketBase
+--------------------------------------------------------------------------------
+[ ] 1. In the left sidebar, click "Settings" (wrench icon) -> "Auth providers".
+[ ] 2. "Email / Password":
+       - Ensure Email/Password auth is ENABLED (it is enabled by default).
+       - Minimum password length: 6 (or 8).
+[ ] 3. "Google OAuth2" (Optional, if using Google login):
+       - Click "Google".
+       - Toggle "Enabled".
+       - Enter your Google Cloud OAuth Client ID & Client Secret.
+       - Add the PocketBase redirect URL in Google Cloud Console:
+         https://pb.momoos.shop/api/oauth2-redirect
+
+--------------------------------------------------------------------------------
+STEP 4: Create the "stamps" Collection
+--------------------------------------------------------------------------------
+IMPORTANT: Add and save the fields FIRST, before setting the API rules!
+PocketBase will fail to validate rules referencing "user" if the field hasn't
+been saved yet.
+
+[ ] 1. In the left sidebar, click "+ New collection".
+[ ] 2. Set Collection Details:
+       - Name: stamps
+       - Type: Base collection
+
+[ ] 3. Under "Fields", click "+ New field" and add:
+
+       FIELD 1: user
+       - Type: Relation
+       - Collection: users
+       - Max Select: 1 (Single relation)
+       - Required: YES
+
+       FIELD 2: category
+       - Type: Select
+       - Field Name: category
+       - Required: YES
+       - Max Select: 1
+       - Options (must match exactly):
+           * Steam Veg
+           * Afghani
+           * Fried
+
+       FIELD 3: status
+       - Type: Select
+       - Field Name: status
+       - Required: YES
+       - Max Select: 1
+       - Options (must match exactly):
+           * pending
+           * approved
+           * rejected
+       - Default value: pending
+
+       FIELD 4: notes (Optional)
+       - Type: Plain text
+       - Field Name: notes
+       - Required: NO
+
+[ ] 4. CLICK "Create" or "Save changes" now! (Save the fields first).
+
+[ ] 5. Now open the "stamps" collection settings again -> click "API Rules" tab.
+       Paste these exact rules (notice: use "user", NOT "user.id"):
+
+       - List / Search rule:
+         @request.auth.id != "" && (@request.auth.id = user || @request.auth.role = "admin")
+
+       - View rule:
+         @request.auth.id != "" && (@request.auth.id = user || @request.auth.role = "admin")
+
+       - Create rule:
+         @request.auth.id != "" && @request.auth.id = user
+
+       - Update rule:
+         @request.auth.id != "" && @request.auth.role = "admin"
+
+       - Delete rule:
+         @request.auth.id != "" && @request.auth.role = "admin"
+
+       (Note: If you ever want to keep the Create rule completely open to any
+        logged-in user during testing, you can also just use: @request.auth.id != "")
+
+[ ] 6. Click "Save changes".
+
+--------------------------------------------------------------------------------
+STEP 5: Create or Promote your Chef Admin Account
+--------------------------------------------------------------------------------
+To access the Chef Admin Counter Console at `/admin`:
+
+[ ] 1. Go to the "users" collection in the dashboard.
+[ ] 2. Click "+ New record" (or edit your existing user account).
+[ ] 3. Fill in:
+       - Email: your-chef-email@example.com
+       - Password: (choose a password)
+       - Name: Chef Admin
+       - Verified: Check YES (optional)
+       - role: Select "admin"
+[ ] 4. Click "Save".
+[ ] 5. Now, whenever you log in with this email on the app, you will have
+       instant access to the Chef Admin Console (`/#/admin`)!
+
+--------------------------------------------------------------------------------
+STEP 6: Verify Frontend Environment
+--------------------------------------------------------------------------------
+[ ] 1. Ensure `.env` in the project root contains:
+       VITE_POCKETBASE_URL=https://pb.momoos.shop
+[ ] 2. Run the frontend:
+       npm run dev
+[ ] 3. Test:
+       - Register a new customer account at `/#/auth`.
+       - Go to `/#/user`, claim a plate stamp (e.g., Steam Veg).
+       - In another tab or private window, log in with your admin chef account.
+       - Go to `/#/admin`, click "Accept (+1 Stamp)".
+       - Look at the customer tab: it immediately updates with a new approved stamp!
+================================================================================

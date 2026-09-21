@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [pendingTickets, setPendingTickets] = useState([]);
-  const [historyTickets, setHistoryTickets] = useState([]);
+  const [pendingStamps, setPendingStamps] = useState([]);
+  const [historyStamps, setHistoryStamps] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null);
@@ -21,30 +21,35 @@ export default function AdminDashboard() {
   const [countdown, setCountdown] = useState(10);
   const [toast, setToast] = useState(null);
 
-  const fetchTickets = useCallback(async () => {
+  const fetchStamps = useCallback(async () => {
     try {
-      // 1. Fetch pending tickets (FIFO queue)
-      const pending = await api.getAdminPendingTickets();
-      setPendingTickets(pending || []);
+      // 1. Fetch pending stamps (FIFO queue)
+      const pending = await api.getAdminPendingStamps();
+      setPendingStamps(pending || []);
 
-      // 2. Fetch recently processed tickets
-      const history = await api.getAdminHistoryTickets(24);
-      setHistoryTickets(history || []);
+      // 2. Fetch recently processed stamps
+      const history = await api.getAdminHistoryStamps(30);
+      setHistoryStamps(history || []);
 
       setLastUpdated(new Date());
       setCountdown(10);
     } catch (err) {
-      console.error('Error fetching admin tickets:', err.message);
+      console.error('Error fetching admin stamps:', err.message);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTickets();
+    fetchStamps();
+
+    // Subscribe to real-time stamp events
+    const unsub = api.subscribeStamps(() => {
+      fetchStamps();
+    });
 
     const pollInterval = setInterval(() => {
-      fetchTickets();
+      fetchStamps();
     }, 10000);
 
     const timerInterval = setInterval(() => {
@@ -54,28 +59,33 @@ export default function AdminDashboard() {
     return () => {
       clearInterval(pollInterval);
       clearInterval(timerInterval);
+      if (typeof unsub === 'function') {
+        unsub();
+      } else {
+        api.unsubscribeStamps();
+      }
     };
-  }, [fetchTickets]);
+  }, [fetchStamps]);
 
-  const handleUpdateStatus = async (ticketId, newStatus) => {
-    setActionLoadingId(ticketId);
+  const handleUpdateStatus = async (stampId, newStatus) => {
+    setActionLoadingId(stampId);
     setToast(null);
 
     try {
-      await api.updateTicketStatus(ticketId, newStatus);
+      await api.updateStampStatus(stampId, newStatus);
 
       setToast({
         type: 'success',
-        message: `TICKET #${ticketId.slice(0, 8)} MARKED AS ${newStatus.toUpperCase()}!`,
+        message: `STAMP #${stampId.slice(0, 8)} MARKED AS ${newStatus.toUpperCase()}!`,
       });
 
-      setPendingTickets((prev) => prev.filter((t) => t.id !== ticketId));
-      await fetchTickets();
+      setPendingStamps((prev) => prev.filter((s) => s.id !== stampId));
+      await fetchStamps();
     } catch (err) {
       console.error('Update status error:', err);
       setToast({
         type: 'error',
-        message: err.message || 'Failed to update ticket status.',
+        message: err.message || 'Failed to update stamp status.',
       });
     } finally {
       setActionLoadingId(null);
@@ -83,6 +93,7 @@ export default function AdminDashboard() {
   };
 
   const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return 'Just now';
     const diff = Math.floor((new Date() - new Date(timestamp)) / 1000);
     if (diff < 30) return 'Just now';
     if (diff < 60) return `${diff}s ago`;
@@ -91,8 +102,8 @@ export default function AdminDashboard() {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const approvedCount = historyTickets.filter((t) => t.status === 'approved').length;
-  const rejectedCount = historyTickets.filter((t) => t.status === 'rejected').length;
+  const approvedCount = historyStamps.filter((s) => s.status === 'approved').length;
+  const rejectedCount = historyStamps.filter((s) => s.status === 'rejected').length;
 
   return (
     <div className="space-y-8 pb-20">
@@ -113,7 +124,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Approving tickets instantly stamps the customer&apos;s phone pass (+1 stamp).
+                Approving stamps instantly punches the customer&apos;s digital pass (+1 stamp via PocketBase).
               </p>
             </div>
           </div>
@@ -122,12 +133,12 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-2 rounded-lg text-xs text-zinc-400">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SYNC: 10s ({countdown}s)</span>
+              <span>LIVE SYNC ({countdown}s)</span>
             </div>
 
             <button
               type="button"
-              onClick={fetchTickets}
+              onClick={fetchStamps}
               disabled={loading}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-xs font-bold text-white active:scale-95 transition-all"
             >
@@ -141,7 +152,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-zinc-800">
           <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
             <span className="text-[10px] text-zinc-400 block uppercase font-bold">Pending Queue</span>
-            <span className="text-xl font-black text-amber-400">{pendingTickets.length}</span>
+            <span className="text-xl font-black text-amber-400">{pendingStamps.length}</span>
           </div>
 
           <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
@@ -186,7 +197,7 @@ export default function AdminDashboard() {
                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
             }`}
           >
-            <span>Pending ({pendingTickets.length})</span>
+            <span>Pending ({pendingStamps.length})</span>
           </button>
 
           <button
@@ -198,7 +209,7 @@ export default function AdminDashboard() {
                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
             }`}
           >
-            <span>History ({historyTickets.length})</span>
+            <span>History ({historyStamps.length})</span>
           </button>
         </div>
 
@@ -207,45 +218,48 @@ export default function AdminDashboard() {
         </span>
       </div>
 
-      {/* TAB 1: PENDING TICKETS */}
+      {/* TAB 1: PENDING STAMPS */}
       {activeTab === 'pending' && (
         <div>
-          {pendingTickets.length === 0 ? (
+          {pendingStamps.length === 0 ? (
             <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-10 text-center max-w-md mx-auto font-mono">
               <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-700 mx-auto flex items-center justify-center text-emerald-400 mb-3">
                 <Check className="w-6 h-6 stroke-[3]" />
               </div>
               <h3 className="text-sm font-bold text-white uppercase mb-1">Queue Clear</h3>
               <p className="text-xs text-zinc-400">
-                No customer purchase claims waiting. New QR scans appear here in real-time every 10s.
+                No customer stamp requests waiting. New orders appear here in real-time.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendingTickets.map((ticket) => {
-                const isLoading = actionLoadingId === ticket.id;
+              {pendingStamps.map((stamp) => {
+                const isLoading = actionLoadingId === stamp.id;
+                const timestamp = stamp.created || stamp.created_at;
+                const customerDisplay =
+                  stamp.expand?.user?.name || stamp.expand?.user?.email || stamp.user;
 
                 return (
                   <div
-                    key={ticket.id}
+                    key={stamp.id}
                     className="bg-[#12141a] border-2 border-amber-400/70 hover:border-amber-400 rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex flex-col justify-between font-mono transition-all"
                   >
                     <div>
-                      {/* Ticket Header */}
+                      {/* Stamp Header */}
                       <div className="flex items-center justify-between mb-3 border-b-2 border-dashed border-zinc-800 pb-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-2xl">
-                            {ticket.category === 'Steam Veg'
+                            {stamp.category === 'Steam Veg'
                               ? '🥟'
-                              : ticket.category === 'Afghani'
+                              : stamp.category === 'Afghani'
                               ? '🥘'
                               : '🔥'}
                           </span>
                           <div>
-                            <h2 className="text-xs font-black uppercase text-white">{ticket.category} Momos</h2>
+                            <h2 className="text-xs font-black uppercase text-white">{stamp.category} Momos</h2>
                             <span className="text-[10px] text-zinc-400 flex items-center gap-1">
                               <Clock className="w-3 h-3 text-amber-400" />
-                              {formatRelativeTime(ticket.created_at)}
+                              {formatRelativeTime(timestamp)}
                             </span>
                           </div>
                         </div>
@@ -257,7 +271,7 @@ export default function AdminDashboard() {
 
                       <div className="bg-zinc-900 rounded p-2 border border-zinc-800 mb-4 text-[11px] text-zinc-400 flex items-center gap-2 truncate">
                         <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                        <span className="truncate">USER: {ticket.user_id}</span>
+                        <span className="truncate">USER: {customerDisplay}</span>
                       </div>
                     </div>
 
@@ -266,7 +280,7 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         disabled={isLoading}
-                        onClick={() => handleUpdateStatus(ticket.id, 'rejected')}
+                        onClick={() => handleUpdateStatus(stamp.id, 'rejected')}
                         className="py-2.5 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-red-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
                       >
                         <X className="w-4 h-4" />
@@ -276,7 +290,7 @@ export default function AdminDashboard() {
                       <button
                         type="button"
                         disabled={isLoading}
-                        onClick={() => handleUpdateStatus(ticket.id, 'approved')}
+                        onClick={() => handleUpdateStatus(stamp.id, 'approved')}
                         className="py-2.5 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
                       >
                         {isLoading ? (
@@ -300,40 +314,43 @@ export default function AdminDashboard() {
       {/* TAB 2: PROCESSED HISTORY */}
       {activeTab === 'history' && (
         <div className="font-mono">
-          {historyTickets.length === 0 ? (
+          {historyStamps.length === 0 ? (
             <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-8 text-center text-xs text-zinc-500">
-              [ NO PROCESSED TICKETS IN CURRENT LOG ]
+              [ NO PROCESSED STAMPS IN CURRENT LOG ]
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {historyTickets.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between p-3.5 rounded-lg bg-[#12141a] border-2 border-zinc-800 text-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl">
-                      {t.category === 'Steam Veg' ? '🥟' : t.category === 'Afghani' ? '🥘' : '🔥'}
-                    </span>
+              {historyStamps.map((s) => {
+                const timestamp = s.updated || s.created || s.created_at;
+                return (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between p-3.5 rounded-lg bg-[#12141a] border-2 border-zinc-800 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">
+                        {s.category === 'Steam Veg' ? '🥟' : s.category === 'Afghani' ? '🥘' : '🔥'}
+                      </span>
+                      <div>
+                        <p className="font-bold text-zinc-200">{s.category}</p>
+                        <span className="text-[10px] text-zinc-500">{formatRelativeTime(timestamp)}</span>
+                      </div>
+                    </div>
+
                     <div>
-                      <p className="font-bold text-zinc-200">{t.category}</p>
-                      <span className="text-[10px] text-zinc-500">{formatRelativeTime(t.created_at)}</span>
+                      {s.status === 'approved' ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                          APPROVED
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-700">
+                          REJECTED
+                        </span>
+                      )}
                     </div>
                   </div>
-
-                  <div>
-                    {t.status === 'approved' ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
-                        APPROVED
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-700">
-                        REJECTED
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

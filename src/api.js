@@ -1,125 +1,248 @@
 import PocketBase from 'pocketbase';
 
-// In production, FastAPI serves both static frontend and /api from the same host
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-const PB_URL = import.meta.env.VITE_POCKETBASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:8090');
+// Default to the provided production PocketBase URL, or environment override if provided
+const PB_URL = import.meta.env.VITE_POCKETBASE_URL || 'https://pb.momoos.shop';
 
 export const pb = new PocketBase(PB_URL);
 
-// Helper for authenticated fetch requests to FastAPI backend
-async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem('momo_auth_token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    const errorMsg = data.detail || data.message || `Request failed with status ${response.status}`;
-    throw new Error(errorMsg);
+// Helper to format PocketBase errors into human-readable strings
+export function formatPbError(err) {
+  if (!err) return 'An unexpected error occurred.';
+  if (err.data && typeof err.data === 'object' && Object.keys(err.data).length > 0) {
+    const fieldErrors = Object.entries(err.data)
+      .map(([field, detail]) => {
+        if (typeof detail === 'object' && detail.message) {
+          return `${field}: ${detail.message}`;
+        }
+        return `${field}: ${detail}`;
+      })
+      .join(', ');
+    if (fieldErrors) return `${err.message || 'Error'}: ${fieldErrors}`;
   }
-
-  return data;
+  return err.message || 'PocketBase request failed.';
 }
+
+// Target collection name: 'stamps' (with fallback support for 'tickets')
+const STAMPS_COLLECTION = 'stamps';
 
 export const api = {
   // Auth API
   async login(identity, password) {
-    // 1. Try FastAPI auth endpoint
     try {
-      const res = await apiFetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ identity, password }),
-      });
-      if (res.token) {
-        localStorage.setItem('momo_auth_token', res.token);
-        localStorage.setItem('momo_user_data', JSON.stringify(res.user));
-        pb.authStore.save(res.token, res.user);
-        return { token: res.token, user: res.user };
-      }
-    } catch (apiErr) {
-      // Fallback directly to PocketBase SDK if backend is in maintenance
-      try {
-        const authData = await pb.collection('users').authWithPassword(identity, password);
-        localStorage.setItem('momo_auth_token', authData.token);
-        localStorage.setItem('momo_user_data', JSON.stringify(authData.record));
-        return { token: authData.token, user: authData.record };
-      } catch {
-        throw apiErr;
-      }
+      const authData = await pb.collection('users').authWithPassword(identity, password);
+      return { token: authData.token, user: authData.record };
+    } catch (err) {
+      throw new Error(formatPbError(err));
     }
   },
 
-  async register(email, password, name) {
-    return await apiFetch('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, name }),
-    });
+  async register(email, password, passwordConfirm, name) {
+    try {
+      const record = await pb.collection('users').create({
+        email,
+        password,
+        passwordConfirm: passwordConfirm || password,
+        name: name || '',
+        role: 'user',
+      });
+      return { success: true, record };
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
+  },
+
+  async loginWithGoogle() {
+    try {
+      const authData = await pb.collection('users').authWithOAuth2({ provider: 'google' });
+      return { token: authData.token, user: authData.record };
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
   async getMe() {
-    return await apiFetch('/api/auth/me');
+    try {
+      if (!pb.authStore.isValid) return null;
+      const refreshed = await pb.collection('users').authRefresh();
+      return refreshed.record;
+    } catch {
+      return pb.authStore.record || null;
+    }
   },
 
   logout() {
-    localStorage.removeItem('momo_auth_token');
-    localStorage.removeItem('momo_user_data');
     pb.authStore.clear();
   },
 
   getStoredSession() {
-    const token = localStorage.getItem('momo_auth_token');
-    const userStr = localStorage.getItem('momo_user_data');
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return { token, user };
-      } catch {
-        return null;
-      }
+    if (pb.authStore.isValid && pb.authStore.record) {
+      return {
+        token: pb.authStore.token,
+        user: pb.authStore.record,
+      };
     }
     return null;
   },
 
-  // Tickets API
-  async claimTicket(category) {
-    return await apiFetch('/api/tickets/claim', {
-      method: 'POST',
-      body: JSON.stringify({ category }),
-    });
+  // Stamps API
+  async claimStamp(category) {
+    if (!pb.authStore.isValid || !pb.authStore.record) {
+      throw new Error('You must be logged in to claim a stamp.');
+    }
+    try {
+      try {
+        return await pb.collection(STAMPS_COLLECTION).create({
+          user: pb.authStore.record.id,
+          category,
+          status: 'pending',
+        });
+      } catch (err) {
+        // Fallback to 'tickets' collection if 'stamps' collection does not exist yet
+        if (err.status === 404) {
+          return await pb.collection('tickets').create({
+            user: pb.authStore.record.id,
+            category,
+            status: 'pending',
+          });
+        }
+        throw err;
+      }
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
-  async getMyTickets() {
-    const data = await apiFetch('/api/tickets/my');
-    return data.tickets || [];
+  async getMyStamps() {
+    if (!pb.authStore.isValid || !pb.authStore.record) {
+      return [];
+    }
+    try {
+      try {
+        return await pb.collection(STAMPS_COLLECTION).getFullList({
+          filter: pb.filter('user = {:userId}', { userId: pb.authStore.record.id }),
+          sort: '-created',
+        });
+      } catch (err) {
+        if (err.status === 404) {
+          return await pb.collection('tickets').getFullList({
+            filter: pb.filter('user = {:userId}', { userId: pb.authStore.record.id }),
+            sort: '-created',
+          });
+        }
+        throw err;
+      }
+    } catch (err) {
+      console.error('Error getting stamps:', formatPbError(err));
+      return [];
+    }
   },
 
-  async getAdminPendingTickets() {
-    const data = await apiFetch('/api/tickets/admin/pending');
-    return data.pending || [];
+  async getAdminPendingStamps() {
+    try {
+      try {
+        return await pb.collection(STAMPS_COLLECTION).getFullList({
+          filter: 'status = "pending"',
+          sort: 'created',
+          expand: 'user',
+        });
+      } catch (err) {
+        if (err.status === 404) {
+          return await pb.collection('tickets').getFullList({
+            filter: 'status = "pending"',
+            sort: 'created',
+            expand: 'user',
+          });
+        }
+        throw err;
+      }
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
-  async getAdminHistoryTickets(limit = 30) {
-    const data = await apiFetch(`/api/tickets/admin/history?limit=${limit}`);
-    return data.history || [];
+  async getAdminHistoryStamps(limit = 30) {
+    try {
+      try {
+        const result = await pb.collection(STAMPS_COLLECTION).getList(1, limit, {
+          filter: 'status != "pending"',
+          sort: '-updated',
+          expand: 'user',
+        });
+        return result.items || [];
+      } catch (err) {
+        if (err.status === 404) {
+          const result = await pb.collection('tickets').getList(1, limit, {
+            filter: 'status != "pending"',
+            sort: '-updated',
+            expand: 'user',
+          });
+          return result.items || [];
+        }
+        throw err;
+      }
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
-  async updateTicketStatus(ticketId, status) {
-    return await apiFetch(`/api/tickets/admin/${ticketId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+  async updateStampStatus(stampId, status) {
+    try {
+      try {
+        return await pb.collection(STAMPS_COLLECTION).update(stampId, { status });
+      } catch (err) {
+        if (err.status === 404) {
+          return await pb.collection('tickets').update(stampId, { status });
+        }
+        throw err;
+      }
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
-  async getStatsSummary() {
-    return await apiFetch('/api/stats/summary');
+  // Real-time SSE subscriptions
+  subscribeStamps(callback) {
+    try {
+      try {
+        return pb.collection(STAMPS_COLLECTION).subscribe('*', callback);
+      } catch {
+        return pb.collection('tickets').subscribe('*', callback);
+      }
+    } catch (err) {
+      console.warn('Real-time subscription notice:', err);
+      return null;
+    }
+  },
+
+  unsubscribeStamps() {
+    try {
+      pb.collection(STAMPS_COLLECTION).unsubscribe('*');
+      pb.collection('tickets').unsubscribe('*');
+    } catch (err) {
+      console.warn('Unsubscribe error:', err);
+    }
+  },
+
+  // Backward-compatibility aliases for tickets
+  claimTicket(category) {
+    return this.claimStamp(category);
+  },
+  getMyTickets() {
+    return this.getMyStamps();
+  },
+  getAdminPendingTickets() {
+    return this.getAdminPendingStamps();
+  },
+  getAdminHistoryTickets(limit) {
+    return this.getAdminHistoryStamps(limit);
+  },
+  updateTicketStatus(ticketId, status) {
+    return this.updateStampStatus(ticketId, status);
+  },
+  subscribeTickets(callback) {
+    return this.subscribeStamps(callback);
+  },
+  unsubscribeTickets() {
+    return this.unsubscribeStamps();
   },
 };

@@ -4,111 +4,79 @@ import { api, pb } from '../api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(pb.authStore.record);
   const [loading, setLoading] = useState(true);
 
-  // Initialize session from localStorage or PocketBase authStore
   useEffect(() => {
-    const initSession = async () => {
-      const stored = api.getStoredSession();
-      if (stored && stored.user) {
-        setUser(stored.user);
-        setProfile({
-          id: stored.user.id,
-          email: stored.user.email,
-          name: stored.user.name,
-          role: stored.user.role || 'user',
-        });
+    // Sync React state on any PocketBase auth change (login, logout, refresh)
+    const unsubscribe = pb.authStore.onChange((token, record) => {
+      setUser(record);
+    }, true);
 
-        // Optionally verify / refresh profile in the background
+    // Initial check: if valid token exists, attempt refresh in background to verify validity
+    const verifySession = async () => {
+      if (pb.authStore.isValid && pb.authStore.token) {
         try {
-          const fresh = await api.getMe();
-          if (fresh && fresh.id) {
-            setUser((prev) => ({ ...prev, ...fresh }));
-            setProfile(fresh);
-          }
+          const freshUser = await api.getMe();
+          setUser(freshUser);
         } catch {
-          // If token expired, clear session
-          // api.logout();
-          // setUser(null);
-          // setProfile(null);
+          // Token expired or invalidated
+          api.logout();
+          setUser(null);
         }
       }
       setLoading(false);
     };
 
-    initSession();
+    verifySession();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async (email, password) => {
     const res = await api.login(email, password);
-    if (res && res.user) {
-      setUser(res.user);
-      const userProfile = {
-        id: res.user.id,
-        email: res.user.email,
-        name: res.user.name,
-        role: res.user.role || 'user',
-      };
-      setProfile(userProfile);
-      return res;
-    }
+    setUser(res.user);
+    return res;
   };
 
-  const signUp = async (email, password, name) => {
-    const res = await api.register(email, password, name);
-    // After registration, auto-login
+  const signUp = async (email, password, passwordConfirm, name) => {
+    const res = await api.register(email, password, passwordConfirm, name);
     if (res && res.success) {
+      // Auto sign-in after registration
       return await signIn(email, password);
     }
     return res;
   };
 
   const signInWithGoogle = async () => {
-    try {
-      // Direct PocketBase OAuth2 flow
-      const authData = await pb.collection('users').authWithOAuth2({ provider: 'google' });
-      if (authData?.token) {
-        localStorage.setItem('momo_auth_token', authData.token);
-        localStorage.setItem('momo_user_data', JSON.stringify(authData.record));
-        setUser(authData.record);
-        setProfile({
-          id: authData.record.id,
-          email: authData.record.email,
-          role: authData.record.role || 'user',
-        });
-      }
-      return authData;
-    } catch (err) {
-      console.error('Google OAuth error:', err);
-      throw err;
-    }
+    const res = await api.loginWithGoogle();
+    setUser(res.user);
+    return res;
   };
 
-  const signOut = async () => {
+  const signOut = () => {
     api.logout();
     setUser(null);
-    setProfile(null);
   };
 
   const refreshProfile = async () => {
     try {
       const fresh = await api.getMe();
-      if (fresh && fresh.id) {
-        setUser((prev) => ({ ...prev, ...fresh }));
-        setProfile(fresh);
+      if (fresh) {
+        setUser(fresh);
       }
     } catch (e) {
       console.warn('Could not refresh profile:', e);
     }
   };
 
-  const isAdmin = (profile?.role === 'admin') || (user?.role === 'admin');
+  const isAdmin = user?.role === 'admin';
 
   const value = {
     user,
-    profile,
+    profile: user,
     isAdmin,
     loading,
     signIn,
@@ -116,7 +84,6 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     signOut,
     refreshProfile,
-    isSupabaseConfigured: true, // Compatibility flag for existing UI banners
     isConfigured: true,
   };
 
