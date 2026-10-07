@@ -37,6 +37,8 @@ Check `backend/.env` and update your PostgreSQL credentials if needed:
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/momo_db
 SECRET_KEY=momo_food_truck_jwt_secret_key_change_me_in_production
+ACCESS_TOKEN_EXPIRE_DAYS=120
+CORS_ORIGINS=https://momoos.shop,https://www.momoos.shop
 ```
 
 ## 4. Install & Run

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from typing import List, Optional
 from datetime import datetime, timezone
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, asc
@@ -131,18 +131,22 @@ def root():
         "service": "Momo Food Truck API",
         "version": "1.0.0",
         "endpoints": {
-            "auth": "/api/auth/*",
-            "stamps": "/api/stamps/*",
-            "admin": "/api/admin/*",
+            "auth": "/auth/* (or /api/auth/*)",
+            "stamps": "/stamps/* (or /api/stamps/*)",
+            "admin": "/admin/* (or /api/admin/*)",
         },
     }
+
+
+# Router for core endpoints (clean URLs without repeating /api)
+api_router = APIRouter()
 
 
 # ==========================================
 # AUTHENTICATION ENDPOINTS
 # ==========================================
 
-@app.post("/api/auth/register", status_code=status.HTTP_201_CREATED)
+@api_router.post("/auth/register", status_code=status.HTTP_201_CREATED)
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
     email_clean = user_data.email.strip().lower()
     existing_user = db.query(User).filter(User.email == email_clean).first()
@@ -173,7 +177,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     }
 
 
-@app.post("/api/auth/login", response_model=AuthResponse)
+@api_router.post("/auth/login", response_model=AuthResponse)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     identifier = (login_data.email or login_data.identity or "").strip().lower()
     if not identifier:
@@ -202,7 +206,7 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
     }
 
 
-@app.get("/api/auth/me", response_model=UserResponse)
+@api_router.get("/auth/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return {
         "id": current_user.id,
@@ -213,10 +217,10 @@ def get_me(current_user: User = Depends(get_current_user)):
 
 
 # ==========================================
-# STAMP ENDPOINTS (USER)
+# STAMP ENDPOINTS (CUSTOMER)
 # ==========================================
 
-@app.post("/api/stamps/claim", status_code=status.HTTP_201_CREATED)
+@api_router.post("/stamps/claim", status_code=status.HTTP_201_CREATED)
 def claim_stamp(
     stamp_in: StampClaim,
     current_user: User = Depends(get_current_user),
@@ -237,12 +241,11 @@ def claim_stamp(
     db.commit()
     db.refresh(new_stamp)
 
-    # Attach current user for formatting
     new_stamp.user = current_user
     return format_stamp(new_stamp)
 
 
-@app.get("/api/stamps/my")
+@api_router.get("/stamps/my")
 def get_my_stamps(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -260,7 +263,7 @@ def get_my_stamps(
 # ADMIN STAMP ENDPOINTS (CHEF CONSOLE)
 # ==========================================
 
-@app.get("/api/admin/stamps/pending")
+@api_router.get("/admin/stamps/pending")
 def get_admin_pending_stamps(
     admin_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
@@ -276,7 +279,7 @@ def get_admin_pending_stamps(
     return [format_stamp(s) for s in stamps]
 
 
-@app.get("/api/admin/stamps/history")
+@api_router.get("/admin/stamps/history")
 def get_admin_history_stamps(
     limit: int = Query(default=30, ge=1, le=200),
     admin_user: User = Depends(get_current_admin),
@@ -294,8 +297,8 @@ def get_admin_history_stamps(
     return [format_stamp(s) for s in stamps]
 
 
-@app.patch("/api/admin/stamps/{stamp_id}")
-@app.put("/api/admin/stamps/{stamp_id}")
+@api_router.patch("/admin/stamps/{stamp_id}")
+@api_router.put("/admin/stamps/{stamp_id}")
 def update_stamp_status(
     stamp_id: int,
     status_update: StampStatusUpdate,
@@ -330,7 +333,13 @@ def update_stamp_status(
     return format_stamp(stamp)
 
 
+# Mount routes at root (e.g., https://api.momoos.shop/auth/login)
+app.include_router(api_router)
+
+# Mount routes at /api as well for compatibility (e.g., https://api.momoos.shop/api/auth/login)
+app.include_router(api_router, prefix="/api")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-

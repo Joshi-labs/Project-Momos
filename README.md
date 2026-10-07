@@ -85,8 +85,8 @@ flowchart TD
     end
 
     subgraph Backend["FastAPI Backend (https://api.momoos.shop)"]
-        Endpoints["REST API (/api/auth, /api/stamps, /api/admin)"]
-        JWT["JWT Auth & Bcrypt Security"]
+        Endpoints["REST API (/auth, /stamps, /admin)"]
+        JWT["JWT Auth (120-Day Lifespan) & Bcrypt"]
         ORM["SQLAlchemy ORM"]
         
         Endpoints --> JWT
@@ -188,9 +188,10 @@ ON CONFLICT (email) DO NOTHING;
 Authentication is centralized in [`src/context/AuthContext.jsx`](file:///d:/Node_X/Project%20Momos/src/context/AuthContext.jsx) and [`src/api.js`](file:///d:/Node_X/Project%20Momos/src/api.js).
 
 ### 1. Email + Password Authentication & JWT
-* Sign-up via `POST /api/auth/register` and login via `POST /api/auth/login`.
+* Sign-up via `POST /auth/register` and login via `POST /auth/login`.
 * Authenticated requests include the JWT bearer token in headers (`Authorization: Bearer <token>`).
-* Tokens are securely held in client local storage and decoded on session restore.
+* JWT tokens are issued with a **120-day expiration period** so customer and chef sessions remain active across visits without frequent re-login prompts.
+* Tokens are stored in client local storage and decoded on session restore.
 
 ### 2. Role-Based Route Guards (`ProtectedRoute`)
 Protected routes in [`src/components/ProtectedRoute.jsx`](file:///d:/Node_X/Project%20Momos/src/components/ProtectedRoute.jsx) enforce two tiers of access:
