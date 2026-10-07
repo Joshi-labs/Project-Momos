@@ -3,50 +3,42 @@
 [![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![PocketBase](https://img.shields.io/badge/PocketBase-v0.28-B8DBE4?logo=sqlite&logoColor=black)](https://pocketbase.io/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
-[![Deploy](https://img.shields.io/badge/Live_Site-momoos.shop-amber?style=flat&logo=google-chrome)](https://momoos.shop)
+[![Frontend](https://img.shields.io/badge/Live_Site-momoos.shop-amber?style=flat&logo=google-chrome)](https://momoos.shop)
+[![API](https://img.shields.io/badge/API_Server-api.momoos.shop-emerald?style=flat&logo=fastapi)](https://api.momoos.shop)
 
-A full-stack, mobile-first web application and digital stamp card designed for the **Momoos Food Truck** in Jabalpur. Customers order hot momos at the truck counter, collect digital stamps on their smartphones, and earn a **100% free plate** after collecting 5 stamps. Truck chefs manage and approve stamp claims in real time via a dedicated Chef Admin console.
+A full-stack, mobile-first web application and digital loyalty stamp card designed for the **Momoos Food Truck** in Jabalpur. Customers order hot momos at the truck counter, collect digital stamps on their smartphones, and earn a **100% free plate** after collecting 5 stamps. Truck chefs manage and approve stamp claims in real time via a dedicated Chef Admin console.
 
-Built with a tactile, neo-brutalist street food aesthetic, real-time Server-Sent Events (SSE), role-based access control, same-window Google OAuth2, and automated CI/CD deployment to GitHub Pages.
+Built with a tactile, neo-brutalist street food aesthetic, role-based access control (RBAC), Python FastAPI REST API with PostgreSQL, and automated deployment to GitHub Pages using HashRouter.
 
 ---
 
 ## 📑 Table of Contents
 
-- [🥟 Momoos Truck — Digital Loyalty \& Street Food Web App](#-momoos-truck--digital-loyalty--street-food-web-app)
-  - [📑 Table of Contents](#-table-of-contents)
-  - [✨ Core Features](#-core-features)
-    - [For Customers](#for-customers)
-    - [For Truck Chefs / Administrators](#for-truck-chefs--administrators)
-    - [Design \& UX](#design--ux)
-  - [🏗️ System Architecture](#️-system-architecture)
-    - [Architecture Diagram](#architecture-diagram)
-  - [🗄️ Data Modeling \& Database Schema](#️-data-modeling--database-schema)
-    - [1. `users` Collection (System Auth)](#1-users-collection-system-auth)
-    - [2. `stamps` Collection (Application Data)](#2-stamps-collection-application-data)
-    - [3. PocketBase API Rules (Access Control)](#3-pocketbase-api-rules-access-control)
-  - [🔐 Authentication \& Authorization](#-authentication--authorization)
-    - [1. Email + Password Authentication](#1-email--password-authentication)
-    - [2. Same-Window Google OAuth2 Redirect Flow](#2-same-window-google-oauth2-redirect-flow)
-    - [3. Role-Based Route Guards (`ProtectedRoute`)](#3-role-based-route-guards-protectedroute)
-  - [⚡ Real-Time Stamp Synchronization](#-real-time-stamp-synchronization)
-  - [📁 Project Structure](#-project-structure)
-  - [🚀 Getting Started](#-getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Environment Configuration](#environment-configuration)
-    - [Development Server](#development-server)
-    - [Production Build](#production-build)
-  - [⚙️ PocketBase Backend Setup](#️-pocketbase-backend-setup)
-    - [Step 1: Create the `stamps` Collection](#step-1-create-the-stamps-collection)
-    - [Step 2: Add `role` Field to `users`](#step-2-add-role-field-to-users)
-    - [Step 3: Promoting a User to Admin / Chef](#step-3-promoting-a-user-to-admin--chef)
-    - [Step 4: Enable Google OAuth2 (Optional)](#step-4-enable-google-oauth2-optional)
-  - [🚢 CI/CD \& GitHub Pages Deployment](#-cicd--github-pages-deployment)
-  - [📍 Food Truck Coordinates](#-food-truck-coordinates)
-  - [📄 License](#-license)
+- [✨ Core Features](#-core-features)
+  - [For Customers](#for-customers)
+  - [For Truck Chefs / Administrators](#for-truck-chefs--administrators)
+  - [Design & UX](#design--ux)
+- [🏗️ System Architecture](#️-system-architecture)
+  - [Architecture Diagram](#architecture-diagram)
+- [🗄️ PostgreSQL Database Schema](#️-postgresql-database-schema)
+  - [1. `users` Table](#1-users-table)
+  - [2. `stamps` Table](#2-stamps-table)
+  - [3. PostgreSQL Initialization Script (`schema.sql`)](#3-postgresql-initialization-script-schemasql)
+- [🔐 Authentication & Authorization](#-authentication--authorization)
+  - [1. Email + Password Authentication & JWT](#1-email--password-authentication--jwt)
+  - [2. Role-Based Route Guards (`ProtectedRoute`)](#2-role-based-route-guards-protectedroute)
+  - [3. Promoting a User to Admin](#3-promoting-a-user-to-admin)
+- [⚡ Real-Time & Auto-Sync Engine](#-real-time--auto-sync-engine)
+- [📁 Project Structure](#-project-structure)
+- [🚀 Setup & Deployment](#-setup--deployment)
+  - [Frontend Setup (React + Vite)](#frontend-setup-react--vite)
+  - [Backend Setup (FastAPI + PostgreSQL)](#backend-setup-fastapi--postgresql)
+  - [GitHub Pages Deployment](#github-pages-deployment)
+- [📍 Food Truck Coordinates](#-food-truck-coordinates)
+- [📄 License](#-license)
 
 ---
 
@@ -58,14 +50,13 @@ Built with a tactile, neo-brutalist street food aesthetic, real-time Server-Sent
 * **Free Plate Voucher Modal**: Automatically generates a verifiable digital pass (`MOMO-FREE-STM-PASS`, etc.) when 5 stamps are filled.
 * **Official Counter Menu**: Browse dishes with canonical pricing (₹50 / ₹60), authentic dish photography, spice levels, portion sizes, dietary tags, and counter extras/dips.
 * **Live Food Truck Spot Location**: Embedded interactive Google Map with 1-click directions to the physical truck location in Jabalpur.
-* **Dual Authentication**: Sign in via Email/Password or 1-tap Google Sign-In.
+* **Streamlined Authentication**: Fast sign up and login using Email and Password with JWT persistence.
 
 ### For Truck Chefs / Administrators
 * **Real-Time Chef Verification Console** (`/admin`): Live FIFO queue of incoming stamp claims with customer email, name, category, and timestamps.
-* **1-Tap Quick Actions**: Instantly **Approve** or **Reject** pending stamp requests.
-* **Real-time Synchronization**: Connected via PocketBase Server-Sent Events (SSE) so claims appear instantly without manual page reloads.
-* **Fallback Auto-Polling**: 10-second background poll with a visible live countdown timer.
-* **Audit History Log**: View the last 30 processed stamps with statuses and processing timestamps.
+* **1-Tap Quick Actions**: Instantly **Approve (+1)** or **Reject** pending stamp requests.
+* **Auto-Polling Sync**: 10-second background polling with a live countdown timer and manual refresh button.
+* **Audit History Log**: View recently processed stamps with statuses and processing timestamps.
 
 ### Design & UX
 * **Tactile Neo-Brutalist Aesthetic**: Dark theme (`#0d0e12`, `#12141a`), bold monospace typography, high-contrast amber accents (`#fbbf24`), heavy borders (`border-2 border-zinc-800`), and tactile button offset shadows (`shadow-[3px_3px_0px_0px_...]`).
@@ -76,107 +67,119 @@ Built with a tactile, neo-brutalist street food aesthetic, real-time Server-Sent
 
 ## 🏗️ System Architecture
 
-Project Momos is architected as a decoupled Single Page Application (SPA) powered by a lightweight, high-performance PocketBase backend.
+Project Momos is architected as a decoupled Single Page Application (SPA) communicating over HTTPS with a Python FastAPI + PostgreSQL backend.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart TD
-    subgraph Client["Frontend Client (React 19 + Vite)"]
+    subgraph Client["Frontend Client (https://momoos.shop)"]
         UI["Tailwind CSS v4 + Neo-Brutalist UI"]
         Router["React Router 7 (HashRouter)"]
         AuthCtx["AuthContext (Session & State)"]
-        API["api.js (PocketBase Client SDK)"]
+        API["api.js (REST Client)"]
         
         UI --> Router
         Router --> AuthCtx
         AuthCtx --> API
     end
 
-    subgraph Backend["PocketBase Backend (pb.momoos.shop)"]
-        AuthStore["Auth Store (JWT & Sessions)"]
-        UsersCol["'users' Collection (RBAC)"]
-        StampsCol["'stamps' Collection (Claims & History)"]
-        SSE["Real-time SSE Engine"]
+    subgraph Backend["FastAPI Backend (https://api.momoos.shop)"]
+        Endpoints["REST API (/api/auth, /api/stamps, /api/admin)"]
+        JWT["JWT Auth & Bcrypt Security"]
+        ORM["SQLAlchemy ORM"]
         
-        API -- "REST (Auth & CRUD)" --> AuthStore
-        API -- "Filter & Expand" --> StampsCol
-        API -- "OAuth2 Handshake" --> UsersCol
-        SSE -- "Live Events (*)" --> API
+        Endpoints --> JWT
+        Endpoints --> ORM
     end
 
-    subgraph Hosting["Hosting & CI/CD"]
-        GHA["GitHub Actions (deploy.yml)"]
-        GHP["GitHub Pages (gh-pages branch)"]
-        CustomDomain["Custom Domain (momoos.shop via CNAME)"]
-
-        GHA -- "Orphan build push" --> GHP
-        GHP --> CustomDomain
+    subgraph Database["PostgreSQL Database"]
+        UsersTable[("users Table")]
+        StampsTable[("stamps Table")]
+        
+        ORM --> UsersTable
+        ORM --> StampsTable
     end
+
+    API -- "HTTPS JSON Requests + Bearer Token" --> Endpoints
 ```
 
 ---
 
-## 🗄️ Data Modeling & Database Schema
+## 🗄️ PostgreSQL Database Schema
 
-The backend uses PocketBase (SQLite-based). The system relies on two primary collections:
+The backend uses PostgreSQL with two core relational tables:
 
-### 1. `users` Collection (System Auth)
+### 1. `users` Table
 
-Extends PocketBase's default `users` authentication collection:
-
-| Field | Type | Required | Description |
+| Column | Type | Constraints | Description |
 |---|---|---|---|
-| `id` | `TEXT` (15 chars) | Yes | Unique user identifier generated by PocketBase |
-| `email` | `EMAIL` | Yes | Unique customer / admin email address |
-| `name` | `TEXT` | No | Display name entered during signup or from Google |
-| `role` | `SELECT` | Yes | User authorization role: `'user'` (default) or `'admin'` |
-| `created` | `DATETIME` | Auto | Account registration timestamp |
-| `updated` | `DATETIME` | Auto | Account update timestamp |
+| `id` | `SERIAL` | `PRIMARY KEY` | Unique numeric identifier |
+| `email` | `VARCHAR(255)` | `UNIQUE NOT NULL` | Customer / Admin email address |
+| `password_hash` | `VARCHAR(255)` | `NOT NULL` | Bcrypt password hash |
+| `name` | `VARCHAR(255)` | `DEFAULT ''` | Customer name |
+| `role` | `VARCHAR(50)` | `DEFAULT 'user'` | Role: `'user'` (customer) or `'admin'` (chef) |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Account creation timestamp |
 
-### 2. `stamps` Collection (Application Data)
+### 2. `stamps` Table
 
-Stores every stamp request, verification decision, and loyalty transaction:
-
-| Field | Type | Required | Description |
+| Column | Type | Constraints | Description |
 |---|---|---|---|
-| `id` | `TEXT` (15 chars) | Yes | Unique stamp record identifier |
-| `user` | `RELATION` | Yes | Foreign key reference to `users.id` (cascade on delete) |
-| `category` | `SELECT` | Yes | One of: `'Steam Veg'`, `'Afghani'`, `'Fried'` |
-| `status` | `SELECT` | Yes | State of claim: `'pending'`, `'approved'`, `'rejected'` |
-| `created` | `DATETIME` | Auto | Timestamp when user submitted the claim |
-| `updated` | `DATETIME` | Auto | Timestamp when chef approved/rejected the claim |
+| `id` | `SERIAL` | `PRIMARY KEY` | Unique stamp claim identifier |
+| `user_id` | `INTEGER` | `REFERENCES users(id) ON DELETE CASCADE` | Foreign key referencing `users.id` |
+| `category` | `VARCHAR(100)` | `NOT NULL` | One of: `'Steam Veg'`, `'Afghani'`, `'Fried'` |
+| `status` | `VARCHAR(50)` | `DEFAULT 'pending'` | State: `'pending'`, `'approved'`, `'rejected'` |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Claim submission timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Decision timestamp |
+
+---
+
+### 3. PostgreSQL Initialization Script (`schema.sql`)
+
+You can run this script directly in your PostgreSQL terminal (`psql`) or pgAdmin Query Tool:
+
+```sql
+-- Create database (if setting up fresh)
+CREATE DATABASE momo_db;
+\c momo_db
+
+-- 1. Create Users Table
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255) DEFAULT '',
+    role VARCHAR(50) DEFAULT 'user',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Create Stamps Table
+CREATE TABLE IF NOT EXISTS stamps (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category VARCHAR(100) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Create Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_stamps_user_id ON stamps(user_id);
+CREATE INDEX IF NOT EXISTS idx_stamps_status ON stamps(status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- 4. Seed Pre-configured Admin & Customer Users
+-- admin@momo.com    -> password: admin123
+-- customer@momo.com -> password: customer123
+INSERT INTO users (email, password_hash, name, role)
+VALUES 
+    ('admin@momo.com', '$2b$12$s06yKFwauKC8QDB0uqlWu.ZwGrdYP2nDsqNC9eesY7NyBWKnMlbXu', 'Chef Admin', 'admin'),
+    ('customer@momo.com', '$2b$12$pfpIpqiCbtctpEoGQrYYFOBIvArZq3ZTQvbspucx25qhDj8VU47e6', 'Rahul Sharma', 'user')
+ON CONFLICT (email) DO NOTHING;
+```
 
 > [!NOTE]
-> **Backward Compatibility**: `api.js` includes an automatic fallback to a collection named `tickets` if `stamps` returns a 404, guaranteeing zero downtime across legacy database migrations.
-
-### 3. PocketBase API Rules (Access Control)
-
-To secure the backend while allowing seamless interaction, the collection rules are configured as:
-
-* **List / Search Rule**:
-  ```text
-  @request.auth.id != "" && (@request.auth.id = user || @request.auth.role = "admin")
-  ```
-  *(Customers can only list their own stamps; Admins can list all stamps)*
-* **View Rule**:
-  ```text
-  @request.auth.id != "" && (@request.auth.id = user || @request.auth.role = "admin")
-  ```
-* **Create Rule**:
-  ```text
-  @request.auth.id != "" && @request.auth.id = @request.data.user && @request.data.status = "pending"
-  ```
-  *(Customers can only submit claims for themselves with initial status "pending")*
-* **Update Rule**:
-  ```text
-  @request.auth.role = "admin"
-  ```
-  *(Only staff with role "admin" can approve or reject stamps)*
-* **Delete Rule**:
-  ```text
-  @request.auth.role = "admin"
-  ```
+> The FastAPI backend also verifies and automatically initializes the database tables and default accounts on startup if the database exists!
 
 ---
 
@@ -184,48 +187,29 @@ To secure the backend while allowing seamless interaction, the collection rules 
 
 Authentication is centralized in [`src/context/AuthContext.jsx`](file:///d:/Node_X/Project%20Momos/src/context/AuthContext.jsx) and [`src/api.js`](file:///d:/Node_X/Project%20Momos/src/api.js).
 
-### 1. Email + Password Authentication
-* Standard sign-up and sign-in against PocketBase `users.authWithPassword()`.
-* Automatically signs in the user upon successful registration.
-* Validates minimum password length (6 characters) and confirmation match.
+### 1. Email + Password Authentication & JWT
+* Sign-up via `POST /api/auth/register` and login via `POST /api/auth/login`.
+* Authenticated requests include the JWT bearer token in headers (`Authorization: Bearer <token>`).
+* Tokens are securely held in client local storage and decoded on session restore.
 
-### 2. Same-Window Google OAuth2 Redirect Flow
-Pop-up based OAuth frequently fails or gets blocked on mobile browsers (Safari on iOS, Chrome on Android). Project Momos implements a bulletproof **same-window redirect flow**:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Customer as User (Mobile Browser)
-    participant App as React App (Auth.jsx)
-    participant PB as PocketBase Server
-    participant Google as Google OAuth2
-
-    Customer->>App: Click "Sign in with Google"
-    App->>PB: listAuthMethods()
-    PB-->>App: Google provider info + codeVerifier + authURL
-    App->>App: Store codeVerifier & return URL in localStorage
-    App->>Google: window.location.href = authURL (Same Tab)
-    Google->>Customer: User grants permission
-    Google-->>App: Redirect back to momoos.shop/?code=...
-    App->>App: Detect ?code= in URL on mount
-    App->>PB: authWithOAuth2Code(provider, code, codeVerifier)
-    PB-->>App: Return JWT Token & User Record
-    App->>App: Clean URL & Navigate to #/user
-```
-
-### 3. Role-Based Route Guards (`ProtectedRoute`)
+### 2. Role-Based Route Guards (`ProtectedRoute`)
 Protected routes in [`src/components/ProtectedRoute.jsx`](file:///d:/Node_X/Project%20Momos/src/components/ProtectedRoute.jsx) enforce two tiers of access:
-1. **User Tier** (`/user`): Requires `user !== null`. Redirects unauthenticated visitors to `/auth`.
-2. **Admin Tier** (`/admin`): Requires `user !== null` and `user.role === 'admin'`. Non-admin accounts receive a formatted **403 Chef Admin Required** screen with clear instructions on how to promote the account in PocketBase.
+1. **User Tier** (`/user`): Requires an authenticated user session. Redirects visitors to `/auth`.
+2. **Admin Tier** (`/admin`): Requires `user.role === 'admin'`. Non-admin accounts receive a formatted **403 Chef Admin Required** screen.
+
+### 3. Promoting a User to Admin
+To give an account chef access in PostgreSQL:
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'chef@momo.com';
+```
 
 ---
 
-## ⚡ Real-Time Stamp Synchronization
+## ⚡ Real-Time & Auto-Sync Engine
 
-To ensure the chef and customer experiences feel instant at the food truck counter:
-1. **Server-Sent Events (SSE)**: On `/admin`, `api.subscribeStamps()` subscribes to `pb.collection('stamps').subscribe('*', callback)`. Whenever a customer submits a claim, the chef's dashboard updates immediately.
-2. **Auto-Polling Fallback**: A 10-second `setInterval` polls `getAdminPendingStamps()` in the background to handle edge cases like cellular reconnects.
-3. **Visual Countdown**: A 10-second decrementing countdown pill displays live sync status for truck staff.
+* **Live Polling**: The chef admin console checks for incoming claims every 10 seconds via `GET /api/admin/stamps/pending`.
+* **Visual Sync Counter**: An animated live indicator and 10-second countdown informs staff when the queue was last refreshed.
+* **Instant Action Response**: Approving or rejecting a stamp triggers an immediate optimistic update and refetches the latest queue.
 
 ---
 
@@ -235,7 +219,18 @@ To ensure the chef and customer experiences feel instant at the food truck count
 Project Momos/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml            # CI/CD: Automated build & deploy to gh-pages branch
+│       └── deploy.yml            # Automated GitHub Pages CI/CD workflow
+├── backend/                      # Python FastAPI + PostgreSQL backend
+│   ├── .env                      # Production / local backend environment variables
+│   ├── .env.example              # Template configuration
+│   ├── auth.py                   # Bcrypt hashing & JWT verification logic
+│   ├── database.py               # SQLAlchemy database session & connection engine
+│   ├── main.py                   # FastAPI REST API routes and CORS configuration
+│   ├── models.py                 # SQLAlchemy models (User, Stamp)
+│   ├── README.md                 # Backend setup guide
+│   ├── requirements.txt          # Python pip dependencies
+│   ├── schema.sql                # Standalone PostgreSQL SQL initialization script
+│   └── schemas.py                # Pydantic request / response schemas
 ├── public/
 │   ├── CNAME                     # Custom domain binding (momoos.shop)
 │   ├── favicon.svg               # Momos dumpling browser icon
@@ -244,130 +239,85 @@ Project Momos/
 │   ├── assets/                   # Static media and logos
 │   ├── components/
 │   │   ├── ConfigBanner.jsx      # Configuration alert banner
-│   │   ├── Navbar.jsx            # Responsive navigation header with active pills
+│   │   ├── Navbar.jsx            # Responsive navigation header
 │   │   ├── ProtectedRoute.jsx    # Authentication & admin role route wrapper
 │   │   └── TruckLocationMap.jsx  # Google Maps embed with truck coordinates
 │   ├── context/
-│   │   └── AuthContext.jsx       # Global authentication provider & session listener
+│   │   └── AuthContext.jsx       # Global authentication provider
 │   ├── pages/
-│   │   ├── AdminDashboard.jsx    # Real-time chef verification console & history
-│   │   ├── Auth.jsx              # Customer login, register, and Google OAuth
-│   │   ├── Home.jsx              # Hero landing page, stamp card mockup, steps, plates
-│   │   ├── Menu.jsx              # Official truck menu, photography, spice meters, sides
-│   │   └── UserDashboard.jsx     # Digital stamp card, claim interface, free plate pass
-│   ├── api.js                    # PocketBase client SDK wrapper & error helpers
-│   ├── App.css                   # Component-level styling overrides
+│   │   ├── AdminDashboard.jsx    # Chef verification console & processing log
+│   │   ├── Auth.jsx              # Customer login and sign up
+│   │   ├── Home.jsx              # Hero landing page, stamp card mockup, menu intro
+│   │   ├── Menu.jsx              # Official truck menu, photography, spice meters
+│   │   └── UserDashboard.jsx     # Digital stamp card, claim interface, free voucher
+│   ├── api.js                    # FastAPI client API wrapper & session storage
+│   ├── App.css                   # Global styling
 │   ├── App.jsx                   # Route declarations with HashRouter
 │   ├── index.css                 # Tailwind CSS v4 styling rules
 │   └── main.jsx                  # React application entry point
-├── .gitignore                    # Git ignored dependencies and build artifacts
-├── .oxlintrc.json                # Oxlint linter configuration
-├── index.html                    # Root HTML template with OpenGraph metadata
-├── package.json                  # Dependencies and execution scripts
-├── vite.config.js                # Vite configuration with relative base ('./')
-└── README.md                     # Comprehensive project documentation
+├── .gitignore                    # Git ignored files
+├── index.html                    # Root HTML template
+├── package.json                  # Frontend dependencies and npm scripts
+├── vite.config.js                # Vite build configuration (base: './')
+└── README.md                     # Project documentation
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Setup & Deployment
 
-### Prerequisites
-* **Node.js**: `v20.x` or higher
-* **npm**: `v10.x` or higher
-* A running **PocketBase** instance (v0.22+ or v0.28+)
+### Frontend Setup (React + Vite)
 
-### Installation
+The frontend is hosted at **`https://momoos.shop`** and preconfigured to communicate directly with **`https://api.momoos.shop/api`**.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Joshi-labs/Project-Momos.git
-   cd Project-Momos
-   ```
-
-2. **Install dependencies**:
+1. **Install dependencies**:
    ```bash
    npm install
    ```
 
-### Environment Configuration
+2. **Build for production**:
+   ```bash
+   npm run build
+   ```
 
-By default, the application connects to the production PocketBase server (`https://pb.momoos.shop`). To point to a local or custom PocketBase instance, create a `.env.local` file in the project root:
-
-```env
-VITE_POCKETBASE_URL=http://127.0.0.1:8090
-```
-
-### Development Server
-
-Start Vite's fast development server:
-```bash
-npm run dev
-```
-Open your browser at `http://localhost:5173`.
-
-### Production Build
-
-Create an optimized static distribution in `./dist`:
-```bash
-npm run build
-```
-
-Preview the production build locally:
-```bash
-npm run preview
-```
+3. **Deploy to GitHub Pages**:
+   ```bash
+   npm run deploy
+   ```
 
 ---
 
-## ⚙️ PocketBase Backend Setup
+### Backend Setup (FastAPI + PostgreSQL)
 
-If you are setting up a new PocketBase server from scratch, follow these steps:
+The backend is hosted at **`https://api.momoos.shop`**.
 
-### Step 1: Create the `stamps` Collection
-In the PocketBase Admin UI (`/_/`):
-1. Click **New Collection** → Name: `stamps` (Type: Base collection).
-2. Add fields:
-   * `user` (Type: Relation → Single → Collection: `users`, Required: Yes, Cascade delete: Yes)
-   * `category` (Type: Select → Values: `Steam Veg`, `Afghani`, `Fried`, Required: Yes)
-   * `status` (Type: Select → Values: `pending`, `approved`, `rejected`, Required: Yes)
-3. Set API Rules as detailed in [Section 3](#3-pocketbase-api-rules-access-control).
+1. **Install Python dependencies**:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
 
-### Step 2: Add `role` Field to `users`
-1. Go to the `users` collection settings.
-2. Add field: `role` (Type: Select → Values: `user`, `admin`, Required: Yes, Default value: `user`).
+2. **Configure `.env`**:
+   ```env
+   DATABASE_URL=postgresql://<user>:<password>@<host>:5432/momo_db
+   SECRET_KEY=your_jwt_secret_key_here
+   CORS_ORIGINS=https://momoos.shop,https://www.momoos.shop
+   ```
 
-### Step 3: Promoting a User to Admin / Chef
-To give an account access to `/admin`:
-1. Open PocketBase Admin UI → `users` collection.
-2. Find the user record.
-3. Change `role` from `user` to `admin` and save.
+3. **Initialize Database**:
+   Run `backend/schema.sql` in your PostgreSQL terminal or let FastAPI auto-create tables on launch.
 
-### Step 4: Enable Google OAuth2 (Optional)
-1. Go to **Settings** → **Auth providers** → **Google**.
-2. Enable Google and enter your Google Cloud **Client ID** and **Client Secret**.
-3. In Google Cloud Console, add `https://pb.momoos.shop/api/oauth2-redirect` to your Authorized Redirect URIs.
+4. **Run the server**:
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
+   Interactive OpenAPI documentation is accessible at `https://api.momoos.shop/docs`.
 
 ---
 
-## 🚢 CI/CD & GitHub Pages Deployment
+### GitHub Pages Deployment
 
-The repository includes a fully automated GitHub Actions workflow in [`.github/workflows/deploy.yml`](file:///d:/Node_X/Project%20Momos/.github/workflows/deploy.yml).
-
-### How It Works:
-1. Triggers on any `git push` to branch `main` (or via manual trigger `workflow_dispatch`).
-2. Checks out code and installs dependencies using `npm ci`.
-3. Runs `npm run build` to compile the app into `./dist`.
-4. Deploys using `peaceiris/actions-gh-pages@v4` with `force_orphan: true`:
-   * Completely **cleans/wipes previous content and history** of the `gh-pages` branch.
-   * Pushes only the newly built static files to `gh-pages`.
-   * Preserves `CNAME` (`momoos.shop`) automatically.
-
-### Configuring GitHub Repository:
-1. Navigate to your repository on GitHub.
-2. Go to **Settings** → **Pages**.
-3. Under **Build and deployment** > **Source**, choose **Deploy from a branch**.
-4. Set the branch to **`gh-pages`** and folder to **`/ (root)`**, then click **Save**.
+The repository includes an automated GitHub Actions deployment workflow in [`.github/workflows/deploy.yml`](file:///d:/Node_X/Project%20Momos/.github/workflows/deploy.yml) that automatically builds and deploys to the `gh-pages` branch upon pushing to `main`.
 
 ---
 
@@ -383,4 +333,3 @@ The repository includes a fully automated GitHub Actions workflow in [`.github/w
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
