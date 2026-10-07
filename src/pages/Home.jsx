@@ -147,7 +147,7 @@ export default function Home() {
       <section className="space-y-4">
         <div className="flex items-center sm:justify-between justify-center">
           <h2 className="text-lg sm:text-xl font-black text-white uppercase font-mono tracking-tight flex items-center gap-2">
-            Steps For Free Momoos Test
+            Steps For Free Momoos
           </h2>
         </div>
 
