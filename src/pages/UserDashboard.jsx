@@ -138,20 +138,23 @@ export default function UserDashboard() {
     <div className="space-y-8 pb-16">
       <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 sm:p-7 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 max-w-full">
             <div className="w-11 h-11 rounded-lg bg-amber-400 text-black font-black text-lg border-2 border-black flex items-center justify-center shrink-0">
               {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'M'}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm sm:text-base font-black text-white uppercase">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm sm:text-base font-black text-white uppercase truncate">
                   MOMO LOYALTY CARD
                 </span>
-                <span className="text-[10px] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-emerald-400 font-bold">
+                <span className="text-[10px] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-emerald-400 font-bold shrink-0">
                   CONNECTED
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 font-mono truncate max-w-sm">
+              <p
+                className="text-xs text-zinc-400 font-mono truncate max-w-full"
+                title={`ID: ${user?.email || ''} ${user?.name ? `(${user.name})` : ''}`}
+              >
                 ID: {user?.email} {user?.name ? `(${user.name})` : ''}
               </p>
             </div>

@@ -46,10 +46,7 @@ export default function Navbar() {
           </div>
           <div>
             <span className="font-black text-base sm:text-lg tracking-tight text-white block uppercase leading-none font-mono">
-              MOMO TRUCK
-            </span>
-            <span className="text-[10px] text-amber-400 font-mono font-bold tracking-widest uppercase">
-              LOYALTY // PASS
+              MOMOOS TRUCK
             </span>
           </div>
         </NavLink>

@@ -1,7 +1,56 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Award, QrCode, UtensilsCrossed, ChevronRight, Sparkles, MapPin, Clock, ArrowUpRight } from 'lucide-react';
+import { Award, QrCode, UtensilsCrossed, ChevronRight, ArrowRight, ArrowDown, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import TruckLocationMap from '../components/TruckLocationMap';
+
+const STEPS = [
+  {
+    step: '01',
+    title: 'Order at Counter',
+    desc: 'Choose any plate from Steam Veg, Afghani Tandoori, or Crispy Fried momos hot from the truck.',
+    meta: '1 Plate = 1 Stamp',
+    icon: UtensilsCrossed,
+  },
+  {
+    step: '02',
+    title: 'One-Tap Claim',
+    desc: 'Select your category and submit claim on your smartphone. The chef verifies it in seconds.',
+    meta: 'Instant Verification',
+    icon: Smartphone,
+  },
+  {
+    step: '03',
+    title: 'Get Free Plate',
+    desc: 'Reach 5 stamps in any category to unlock your free plate pass. Show to the chef to redeem!',
+    meta: '100% Free Plate Unlocked',
+    icon: Award,
+  },
+];
+
+const SIGNATURE_PLATES = [
+  {
+    name: 'Steam Veg Momos',
+    price: '₹50 - 8 PCS',
+    desc: 'Hand-rolled dumplings filled with mountain greens, ginger, and garlic with spicy sesame sauce.',
+    image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80',
+    link: '/user?category=Steam%20Veg',
+  },
+  {
+    name: 'Afghani Momos',
+    price: '₹60 - 8 PCS',
+    desc: 'Tandoor-charred dumplings smothered in rich cashew-cream, malai herbs, and melted butter.',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    link: '/user?category=Afghani',
+  },
+  {
+    name: 'Fried Momos',
+    price: '₹60 - 8 PCS',
+    desc: 'Crisp golden exterior with juicy spiced filling inside, tossed in peri-peri seasonings.',
+    image: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=600&q=80',
+    link: '/user?category=Fried',
+  },
+];
 
 export default function Home() {
   const { user } = useAuth();
@@ -9,15 +58,12 @@ export default function Home() {
   return (
     <div className="space-y-10 pb-16">
       {/* Boxy Modern Split Hero */}
+      <br/>
       <section className="relative rounded-2xl bg-[#111319] border-2 border-zinc-800 p-6 sm:p-10 lg:p-12 overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Left Column: Bold Headline & Kick Action */}
           <div className="lg:col-span-7 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-zinc-900 border border-zinc-700 font-mono text-[11px] font-bold text-amber-400 tracking-wider uppercase">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>DIGITAL LOYALTY CARD // v2.0</span>
-            </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.08] uppercase font-mono">
               Eat Hot Momos. <br />
@@ -28,7 +74,7 @@ export default function Home() {
             </h1>
 
             <p className="text-xs sm:text-sm text-zinc-400 max-w-xl leading-relaxed">
-              No torn paper cards. Order Steam Veg, Afghani, or Fried momos at the food truck, tap claim on your phone, and get stamped instantly by the chef.
+              Order Steam Veg, Afghani, or Fried momos at the food truck, tap claim on your phone, and get stamped instantly by the chef.
             </p>
 
             {/* Boxy Tactile Buttons */}
@@ -51,21 +97,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Boxy Specs Grid */}
-            <div className="grid grid-cols-3 gap-3 pt-5 border-t border-zinc-800 font-mono text-xs">
-              <div className="bg-zinc-900/80 border border-zinc-800 p-3 rounded-lg">
-                <span className="font-black text-amber-400 block text-sm">5 STAMPS</span>
-                <span className="text-[10px] text-zinc-400 uppercase tracking-wider">= 1 Free Plate</span>
-              </div>
-              <div className="bg-zinc-900/80 border border-zinc-800 p-3 rounded-lg">
-                <span className="font-black text-emerald-400 block text-sm">1-TAP</span>
-                <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Chef Verified</span>
-              </div>
-              <div className="bg-zinc-900/80 border border-zinc-800 p-3 rounded-lg">
-                <span className="font-black text-orange-400 block text-sm">3 STYLES</span>
-                <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Steam / Afghani / Fried</span>
-              </div>
-            </div>
+
           </div>
 
           {/* Right Column: Boxy Street Food Pass Mockup */}
@@ -73,12 +105,9 @@ export default function Home() {
             <div className="w-full max-w-md bg-[#161822] border-2 border-zinc-700 rounded-xl p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.6)] relative">
               <div className="flex items-center justify-between border-b-2 border-dashed border-zinc-700 pb-3 mb-4 font-mono">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded bg-amber-400 text-black font-black flex items-center justify-center text-xs">
-                    M
-                  </div>
+
                   <div>
-                    <span className="text-xs font-black text-white block uppercase">MOMO_PASS // #088</span>
-                    <span className="text-[10px] text-zinc-400">COUNTER DIGITAL PASS</span>
+                    <span className="text-xs font-black text-white block uppercase">MOMO_PASS #088</span>
                   </div>
                 </div>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">
@@ -87,7 +116,7 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-5 gap-2 my-4">
-                {[1, 2, 3, 4].map((i) => (
+                {[1, 2, 3, 4,].map((i) => (
                   <div
                     key={i}
                     className="aspect-square rounded-lg bg-amber-400 text-black border-2 border-black flex flex-col items-center justify-center font-mono font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
@@ -98,16 +127,15 @@ export default function Home() {
                 ))}
                 <div className="aspect-square rounded-lg bg-[#0d0e12] border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center text-zinc-500 font-mono">
                   <span className="text-xs font-bold text-zinc-400">05</span>
-                  <span className="text-[7px] text-amber-400 font-bold uppercase">FREE</span>
+                  <span className="text-[7px] text-amber-400 font-bold uppercase"></span>
                 </div>
               </div>
 
               <div className="pt-3 border-t-2 border-dashed border-zinc-700 flex items-center justify-between text-[11px] font-mono text-zinc-400">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                   4/5 Stamps Filled
                 </span>
-                <span className="text-amber-400 font-bold">Next Plate Free →</span>
+                <span className="text-amber-400 font-bold">Claim Plate Free →</span>
               </div>
             </div>
           </div>
@@ -117,157 +145,107 @@ export default function Home() {
 
       {/* How It Works */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center sm:justify-between justify-center">
           <h2 className="text-lg sm:text-xl font-black text-white uppercase font-mono tracking-tight flex items-center gap-2">
-            <Award className="w-5 h-5 text-amber-400" />
-            How You Earn Free Momos
+            Steps For Free Momoos
           </h2>
-          <span className="text-xs font-mono text-zinc-500 uppercase">RULE // 5 STAMPS = 1 REWARD</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-[#12141a] border-2 border-zinc-800 p-5 rounded-xl flex flex-col justify-between shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)]">
-            <div>
-              <span className="font-mono text-xs font-black text-amber-400 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 inline-block mb-3">
-                STEP // 01
-              </span>
-              <h3 className="text-sm font-bold text-white mb-1.5 uppercase font-mono">Order at Counter</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Choose any plate from Steam Veg, Afghani Tandoori, or Crispy Fried momos hot from the truck.
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-500 uppercase">
-              1 Plate = 1 Stamp
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 relative">
+          {STEPS.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.step}
+                className="relative bg-[#12141a] border-2 border-zinc-800 hover:border-zinc-700/80 p-5 rounded-xl flex flex-col justify-between shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] transition-all"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-2.5">
+                    <h3 className="text-sm sm:text-base font-bold text-white uppercase font-mono tracking-tight">
+                      {item.title}
+                    </h3>
+                    <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400 shrink-0">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                  </div>
 
-          <div className="bg-[#12141a] border-2 border-zinc-800 p-5 rounded-xl flex flex-col justify-between shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)]">
-            <div>
-              <span className="font-mono text-xs font-black text-orange-400 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 inline-block mb-3">
-                STEP // 02
-              </span>
-              <h3 className="text-sm font-bold text-white mb-1.5 uppercase font-mono">One-Tap Claim</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Select your category and submit claim on your smartphone. The chef verifies it in seconds.
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-500 uppercase">
-              Live Real-Time Confirmation
-            </div>
-          </div>
+                  <p className="text-xs sm:text-[13px] text-zinc-400 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
 
-          <div className="bg-[#12141a] border-2 border-zinc-800 p-5 rounded-xl flex flex-col justify-between shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)]">
-            <div>
-              <span className="font-mono text-xs font-black text-emerald-400 px-2 py-1 bg-zinc-900 rounded border border-zinc-800 inline-block mb-3">
-                STEP // 03
-              </span>
-              <h3 className="text-sm font-bold text-white mb-1.5 uppercase font-mono">Get Free Plate</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Reach 5 stamps in any category to unlock your free plate pass. Show to the chef to redeem!
-              </p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-500 uppercase">
-              100% Free Plate Unlocked
-            </div>
-          </div>
+                <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center gap-2 text-[11px] font-mono text-zinc-400 uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 shrink-0" />
+                  <span>{item.meta}</span>
+                </div>
+
+                {index < STEPS.length - 1 && (
+                  <>
+                    {/* Desktop connector arrow */}
+                    <div className="hidden md:flex absolute -right-3.5 lg:-right-4 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-[#161822] border-2 border-zinc-700 items-center justify-center shadow-md pointer-events-none">
+                      <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                    </div>
+                    {/* Mobile connector arrow */}
+                    <div className="flex md:hidden absolute -bottom-3.5 left-1/2 -translate-x-1/2 z-10 w-7 h-7 rounded-full bg-[#161822] border-2 border-zinc-700 items-center justify-center shadow-md pointer-events-none">
+                      <ArrowDown className="w-3.5 h-3.5 text-amber-400" />
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Eligible Momo Categories */}
+      {/* Signature Plates */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center sm:justify-between justify-center">
           <h2 className="text-lg sm:text-xl font-black text-white uppercase font-mono tracking-tight">
-            Eligible Momo Categories
+            Popular Plates
           </h2>
-          <Link
-            to="/menu"
-            className="text-xs font-mono font-bold text-amber-400 hover:underline flex items-center gap-1"
-          >
-            Full Menu <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-[#12141a] border-2 border-zinc-800 hover:border-emerald-500/80 p-5 rounded-xl transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3 font-mono">
-                <span className="text-3xl">🥟</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 uppercase">
-                  Classic Veg
-                </span>
-              </div>
-              <h3 className="text-sm font-bold text-white uppercase font-mono mb-1">Steam Veg Momos</h3>
-              <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-                Hand-rolled dumplings filled with mountain greens, ginger, and garlic with spicy sesame sauce.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
-              <span className="text-zinc-500">₹100 // 8 PCS</span>
-              <Link to="/user?category=Steam%20Veg" className="text-amber-400 font-bold hover:underline">
-                [ Claim Stamp → ]
-              </Link>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {SIGNATURE_PLATES.map((item) => (
+            <div
+              key={item.name}
+              className="bg-[#12141a] border-2 border-zinc-800 hover:border-zinc-700 p-4 sm:p-5 rounded-xl transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] flex flex-col justify-between group"
+            >
+              <div>
+                <div className="relative aspect-[16/10] rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 mb-3.5">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                  <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-950/80 backdrop-blur-sm text-zinc-300 border border-zinc-700/80 uppercase font-mono">
+                    {item.tag}
+                  </span>
+                </div>
 
-          <div className="bg-[#12141a] border-2 border-zinc-800 hover:border-amber-500/80 p-5 rounded-xl transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3 font-mono">
-                <span className="text-3xl">🥘</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-700 uppercase">
-                  Chef Special
-                </span>
+                <h3 className="text-sm sm:text-base font-bold text-white uppercase font-mono mb-1.5 tracking-tight">
+                  {item.name}
+                </h3>
+                <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                  {item.desc}
+                </p>
               </div>
-              <h3 className="text-sm font-bold text-white uppercase font-mono mb-1">Afghani Momos</h3>
-              <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-                Tandoor-charred dumplings smothered in rich cashew-cream, malai herbs, and melted butter.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
-              <span className="text-zinc-500">₹150 // 8 PCS</span>
-              <Link to="/user?category=Afghani" className="text-amber-400 font-bold hover:underline">
-                [ Claim Stamp → ]
-              </Link>
-            </div>
-          </div>
 
-          <div className="bg-[#12141a] border-2 border-zinc-800 hover:border-orange-500/80 p-5 rounded-xl transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3 font-mono">
-                <span className="text-3xl">🔥</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-950 text-orange-300 border border-orange-700 uppercase">
-                  Extra Crispy
-                </span>
+              <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
+                <span className="text-zinc-400 font-bold">{item.price}</span>
+                <Link to={item.link} className="text-amber-400 font-bold hover:underline">
+                  [ Claim Stamp → ]
+                </Link>
               </div>
-              <h3 className="text-sm font-bold text-white uppercase font-mono mb-1">Fried Momos</h3>
-              <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-                Crisp golden exterior with juicy spiced filling inside, tossed in peri-peri seasonings.
-              </p>
             </div>
-            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
-              <span className="text-zinc-500">₹120 // 8 PCS</span>
-              <Link to="/user?category=Fried" className="text-amber-400 font-bold hover:underline">
-                [ Claim Stamp → ]
-              </Link>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Truck Info Box */}
-      <section className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
-        <div className="flex items-center gap-3">
-          <MapPin className="w-5 h-5 text-orange-400 shrink-0" />
-          <div>
-            <span className="font-bold text-white uppercase block">Momo Food Truck Spot</span>
-            <span className="text-zinc-400">Counter Pickup &amp; Digital Loyalty Verification</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-lg text-zinc-300">
-          <Clock className="w-4 h-4 text-amber-400" />
-          <span>4:30 PM – 10:30 PM Daily</span>
-        </div>
-      </section>
+      {/* Momo Food Truck Spot Location Section */}
+      <TruckLocationMap />
     </div>
   );
 }
