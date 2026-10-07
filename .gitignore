@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-
+.gitignore
 .env
 
 __pycache__/
