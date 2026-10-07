@@ -121,16 +121,16 @@ The backend uses PostgreSQL with two core relational tables:
 | `role` | `VARCHAR(50)` | `DEFAULT 'user'` | Role: `'user'` (customer) or `'admin'` (chef) |
 | `created_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Account creation timestamp |
 
-### 2. `stamps` Table
+### 2. `stamps` Table (Approved Stamps)
+
+Pending claims stay in Python memory for 2 minutes and are only inserted into PostgreSQL upon chef approval.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| `id` | `SERIAL` | `PRIMARY KEY` | Unique stamp claim identifier |
+| `id` | `SERIAL` | `PRIMARY KEY` | Unique stamp identifier |
 | `user_id` | `INTEGER` | `REFERENCES users(id) ON DELETE CASCADE` | Foreign key referencing `users.id` |
 | `category` | `VARCHAR(100)` | `NOT NULL` | One of: `'Steam Veg'`, `'Afghani'`, `'Fried'` |
-| `status` | `VARCHAR(50)` | `DEFAULT 'pending'` | State: `'pending'`, `'approved'`, `'rejected'` |
-| `created_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Claim submission timestamp |
-| `updated_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Decision timestamp |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT CURRENT_TIMESTAMP` | Timestamp when stamp was approved |
 
 ---
 
@@ -153,19 +153,16 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Create Stamps Table
+-- 2. Create Stamps Table (Only approved stamps are stored)
 CREATE TABLE IF NOT EXISTS stamps (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category VARCHAR(100) NOT NULL,
-    status VARCHAR(50) DEFAULT 'pending',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 3. Create Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_stamps_user_id ON stamps(user_id);
-CREATE INDEX IF NOT EXISTS idx_stamps_status ON stamps(status);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- 4. Seed Pre-configured Admin & Customer Users
