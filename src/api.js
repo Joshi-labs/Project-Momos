@@ -1,136 +1,197 @@
-import PocketBase from 'pocketbase';
+// Fast, lightweight API client connecting to Python FastAPI + PostgreSQL backend
 
-// Default to the provided production PocketBase URL, or environment override if provided
-const PB_URL = import.meta.env.VITE_POCKETBASE_URL || 'https://pb.momoos.shop';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.momoos.shop/api';
 
-export const pb = new PocketBase(PB_URL);
+const TOKEN_KEY = 'momo_auth_token';
+const USER_KEY = 'momo_auth_user';
 
-// Helper to format PocketBase errors into human-readable strings
-export function formatPbError(err) {
-  if (!err) return 'An unexpected error occurred.';
-  if (err.data && typeof err.data === 'object' && Object.keys(err.data).length > 0) {
-    const fieldErrors = Object.entries(err.data)
-      .map(([field, detail]) => {
-        if (typeof detail === 'object' && detail.message) {
-          return `${field}: ${detail.message}`;
-        }
-        return `${field}: ${detail}`;
-      })
-      .join(', ');
-    if (fieldErrors) return `${err.message || 'Error'}: ${fieldErrors}`;
+// In-memory + LocalStorage Auth Store emulating session state
+class SimpleAuthStore {
+  constructor() {
+    this.listeners = new Set();
   }
-  return err.message || 'PocketBase request failed.';
+
+  get token() {
+    try {
+      return localStorage.getItem(TOKEN_KEY) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  get record() {
+    try {
+      const data = localStorage.getItem(USER_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  get isValid() {
+    return Boolean(this.token && this.record);
+  }
+
+  save(token, record) {
+    try {
+      if (token) localStorage.setItem(TOKEN_KEY, token);
+      if (record) localStorage.setItem(USER_KEY, JSON.stringify(record));
+    } catch (e) {
+      console.warn('Could not save auth to localStorage:', e);
+    }
+    this._notify(token, record);
+  }
+
+  clear() {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } catch (e) {
+      console.warn('Could not clear auth in localStorage:', e);
+    }
+    this._notify('', null);
+  }
+
+  onChange(callback, fireImmediately = false) {
+    this.listeners.add(callback);
+    if (fireImmediately) {
+      callback(this.token, this.record);
+    }
+    return () => {
+      this.listeners.delete(callback);
+    };
+  }
+
+  _notify(token, record) {
+    for (const listener of this.listeners) {
+      try {
+        listener(token, record);
+      } catch (err) {
+        console.error('Auth listener error:', err);
+      }
+    }
+  }
 }
 
-// Target collection name: 'stamps' (with fallback support for 'tickets')
-const STAMPS_COLLECTION = 'stamps';
+export const pb = {
+  authStore: new SimpleAuthStore(),
+};
+
+// Helper to format API errors into human-readable strings
+export function formatPbError(err) {
+  if (!err) return 'An unexpected error occurred.';
+  if (typeof err === 'string') return err;
+  return err.message || 'Request failed. Please check the backend connection.';
+}
+
+export const formatError = formatPbError;
+
+// Internal fetch request wrapper with auth header injection
+async function request(endpoint, options = {}) {
+  const url = `${API_URL}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+
+  const token = pb.authStore.token;
+  if (token && !headers.Authorization) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let response;
+  try {
+    response = await fetch(url, { ...options, headers });
+  } catch {
+    throw new Error(
+      `Unable to reach the server at ${API_URL}. Please check your connection and try again.`
+    );
+  }
+
+  let data = null;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    data = await response.json();
+  } else {
+    data = await response.text();
+  }
+
+  if (!response.ok) {
+    const errorMsg =
+      (data && typeof data === 'object' && (data.detail || data.message || data.error)) ||
+      (typeof data === 'string' && data) ||
+      `Request failed with status ${response.status}`;
+    throw new Error(errorMsg);
+  }
+
+  return data;
+}
+
+// Local event subscriber bus for instant UI reaction across claims and approvals
+const stampSubscribers = new Set();
+function notifyStampSubscribers(event) {
+  for (const cb of stampSubscribers) {
+    try {
+      cb(event);
+    } catch (e) {
+      console.error('Subscriber callback error:', e);
+    }
+  }
+}
 
 export const api = {
   // Auth API
   async login(identity, password) {
     try {
-      const authData = await pb.collection('users').authWithPassword(identity, password);
-      return { token: authData.token, user: authData.record };
+      const data = await request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: identity, password }),
+      });
+      pb.authStore.save(data.token, data.user);
+      return { token: data.token, user: data.user };
     } catch (err) {
       throw new Error(formatPbError(err));
     }
   },
 
   async register(email, password, passwordConfirm, name) {
+    if (passwordConfirm && password !== passwordConfirm) {
+      throw new Error('Passwords do not match.');
+    }
     try {
-      const record = await pb.collection('users').create({
-        email,
-        password,
-        passwordConfirm: passwordConfirm || password,
-        name: name || '',
-        role: 'user',
+      const data = await request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, name }),
       });
-      return { success: true, record };
+      return { success: true, record: data.record };
     } catch (err) {
       throw new Error(formatPbError(err));
     }
   },
 
-  // Same-window OAuth2 redirect flow (no popup)
-  // Step 1: Redirect user to Google in the same tab
   async loginWithGoogleRedirect() {
-    try {
-      const authMethods = await pb.collection('users').listAuthMethods();
-      const providers = authMethods?.oauth2?.providers || [];
-      const google = providers.find((p) => p.name === 'google');
-      if (!google) {
-        throw new Error('Google OAuth2 is not configured in PocketBase. Enable it in Settings → Auth providers.');
-      }
-
-      // Use our app's URL as the redirect target (same window)
-      const redirectUrl = window.location.origin + window.location.pathname;
-
-      // Store verifier + provider so we can complete the exchange when Google sends us back
-      localStorage.setItem('pb_oauth_provider', google.name);
-      localStorage.setItem('pb_oauth_verifier', google.codeVerifier);
-      localStorage.setItem('pb_oauth_redirect', redirectUrl);
-
-      // Rewrite redirect_uri in the auth URL to point back to our app
-      const authUrl = new URL(google.authURL);
-      authUrl.searchParams.set('redirect_uri', redirectUrl);
-
-      // Navigate in the same tab
-      window.location.href = authUrl.toString();
-    } catch (err) {
-      throw new Error(formatPbError(err));
-    }
+    throw new Error(
+      'Google OAuth is disabled in local mode. Please use Email / Password to sign in.'
+    );
   },
 
-  // Step 2: Called on page load to complete the OAuth exchange if code is present
   async handleOAuthRedirect() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (!code) return null;
-
-    const provider = localStorage.getItem('pb_oauth_provider');
-    const codeVerifier = localStorage.getItem('pb_oauth_verifier');
-    const redirectUrl = localStorage.getItem('pb_oauth_redirect');
-
-    if (!provider || !codeVerifier || !redirectUrl) {
-      // No stored OAuth state — clear the URL and bail
-      window.history.replaceState({}, '', window.location.pathname + (window.location.hash || ''));
-      return null;
-    }
-
-    // Clean up stored OAuth state
-    localStorage.removeItem('pb_oauth_provider');
-    localStorage.removeItem('pb_oauth_verifier');
-    localStorage.removeItem('pb_oauth_redirect');
-
-    // Clean the URL so the code doesn't linger
-    window.history.replaceState({}, '', window.location.pathname + '#/user');
-
-    try {
-      const authData = await pb.collection('users').authWithOAuth2Code(
-        provider,
-        code,
-        codeVerifier,
-        redirectUrl,
-        { role: 'user' }, // createData for new users
-      );
-      return { token: authData.token, user: authData.record };
-    } catch (err) {
-      throw new Error(formatPbError(err));
-    }
+    return null;
   },
 
-  // Legacy alias kept for compatibility
   async loginWithGoogle() {
     return this.loginWithGoogleRedirect();
   },
 
   async getMe() {
+    if (!pb.authStore.isValid) return null;
     try {
-      if (!pb.authStore.isValid) return null;
-      const refreshed = await pb.collection('users').authRefresh();
-      return refreshed.record;
+      const user = await request('/auth/me', { method: 'GET' });
+      pb.authStore.save(pb.authStore.token, user);
+      return user;
     } catch {
-      return pb.authStore.record || null;
+      pb.authStore.clear();
+      return null;
     }
   },
 
@@ -154,23 +215,12 @@ export const api = {
       throw new Error('You must be logged in to claim a stamp.');
     }
     try {
-      try {
-        return await pb.collection(STAMPS_COLLECTION).create({
-          user: pb.authStore.record.id,
-          category,
-          status: 'pending',
-        });
-      } catch (err) {
-        // Fallback to 'tickets' collection if 'stamps' collection does not exist yet
-        if (err.status === 404) {
-          return await pb.collection('tickets').create({
-            user: pb.authStore.record.id,
-            category,
-            status: 'pending',
-          });
-        }
-        throw err;
-      }
+      const stamp = await request('/stamps/claim', {
+        method: 'POST',
+        body: JSON.stringify({ category }),
+      });
+      notifyStampSubscribers({ action: 'create', record: stamp });
+      return stamp;
     } catch (err) {
       throw new Error(formatPbError(err));
     }
@@ -181,20 +231,7 @@ export const api = {
       return [];
     }
     try {
-      try {
-        return await pb.collection(STAMPS_COLLECTION).getFullList({
-          filter: pb.filter('user = {:userId}', { userId: pb.authStore.record.id }),
-          sort: '-created',
-        });
-      } catch (err) {
-        if (err.status === 404) {
-          return await pb.collection('tickets').getFullList({
-            filter: pb.filter('user = {:userId}', { userId: pb.authStore.record.id }),
-            sort: '-created',
-          });
-        }
-        throw err;
-      }
+      return await request('/stamps/my', { method: 'GET' });
     } catch (err) {
       console.error('Error getting stamps:', formatPbError(err));
       return [];
@@ -203,22 +240,7 @@ export const api = {
 
   async getAdminPendingStamps() {
     try {
-      try {
-        return await pb.collection(STAMPS_COLLECTION).getFullList({
-          filter: 'status = "pending"',
-          sort: 'created',
-          expand: 'user',
-        });
-      } catch (err) {
-        if (err.status === 404) {
-          return await pb.collection('tickets').getFullList({
-            filter: 'status = "pending"',
-            sort: 'created',
-            expand: 'user',
-          });
-        }
-        throw err;
-      }
+      return await request('/admin/stamps/pending', { method: 'GET' });
     } catch (err) {
       throw new Error(formatPbError(err));
     }
@@ -226,24 +248,7 @@ export const api = {
 
   async getAdminHistoryStamps(limit = 30) {
     try {
-      try {
-        const result = await pb.collection(STAMPS_COLLECTION).getList(1, limit, {
-          filter: 'status != "pending"',
-          sort: '-updated',
-          expand: 'user',
-        });
-        return result.items || [];
-      } catch (err) {
-        if (err.status === 404) {
-          const result = await pb.collection('tickets').getList(1, limit, {
-            filter: 'status != "pending"',
-            sort: '-updated',
-            expand: 'user',
-          });
-          return result.items || [];
-        }
-        throw err;
-      }
+      return await request(`/admin/stamps/history?limit=${limit}`, { method: 'GET' });
     } catch (err) {
       throw new Error(formatPbError(err));
     }
@@ -251,43 +256,30 @@ export const api = {
 
   async updateStampStatus(stampId, status) {
     try {
-      try {
-        return await pb.collection(STAMPS_COLLECTION).update(stampId, { status });
-      } catch (err) {
-        if (err.status === 404) {
-          return await pb.collection('tickets').update(stampId, { status });
-        }
-        throw err;
-      }
+      const stamp = await request(`/admin/stamps/${stampId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      notifyStampSubscribers({ action: 'update', record: stamp });
+      return stamp;
     } catch (err) {
       throw new Error(formatPbError(err));
     }
   },
 
-  // Real-time SSE subscriptions
+  // Real-time notification callbacks
   subscribeStamps(callback) {
-    try {
-      try {
-        return pb.collection(STAMPS_COLLECTION).subscribe('*', callback);
-      } catch {
-        return pb.collection('tickets').subscribe('*', callback);
-      }
-    } catch (err) {
-      console.warn('Real-time subscription notice:', err);
-      return null;
-    }
+    stampSubscribers.add(callback);
+    return () => {
+      stampSubscribers.delete(callback);
+    };
   },
 
   unsubscribeStamps() {
-    try {
-      pb.collection(STAMPS_COLLECTION).unsubscribe('*');
-      pb.collection('tickets').unsubscribe('*');
-    } catch (err) {
-      console.warn('Unsubscribe error:', err);
-    }
+    stampSubscribers.clear();
   },
 
-  // Backward-compatibility aliases for tickets
+  // Backward-compatibility aliases
   claimTicket(category) {
     return this.claimStamp(category);
   },

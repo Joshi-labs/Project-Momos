@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Approving stamps instantly punches the customer&apos;s digital pass (+1 stamp via PocketBase).
+                Approving stamps instantly punches the customer&apos;s digital pass (+1 stamp).
               </p>
             </div>
           </div>

@@ -36,9 +36,9 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
 
           <div className="space-y-4 text-left">
             <div className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
-              <span className="text-amber-400 font-bold block mb-1">HOW TO PROMOTE IN POCKETBASE:</span>
+              <span className="text-amber-400 font-bold block mb-1">HOW TO PROMOTE IN POSTGRESQL:</span>
               <p className="text-zinc-300 block bg-black/40 p-2 rounded border border-zinc-800">
-                Go to <span className="text-amber-400">pb.momoos.shop/_/</span> &rarr; <strong>users</strong> collection &rarr; edit record <strong>{user.id}</strong> &rarr; set <code>role = &apos;admin&apos;</code>.
+                In PostgreSQL terminal or pgAdmin &rarr; run: <code>UPDATE users SET role = &apos;admin&apos; WHERE email = &apos;{user.email}&apos;;</code>
               </p>
             </div>
 
