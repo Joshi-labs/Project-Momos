@@ -97,12 +97,14 @@ function AdminDashboardContent() {
 
   const formatRelativeTime = (timestamp) => {
     if (!timestamp) return 'Just now';
-    const diff = Math.floor((new Date() - new Date(timestamp)) / 1000);
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return 'Recent';
+    const diff = Math.floor((new Date() - d) / 1000);
     if (diff < 30) return 'Just now';
     if (diff < 60) return `${diff}s ago`;
     const mins = Math.floor(diff / 60);
     if (mins < 60) return `${mins}m ago`;
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   const approvedCount = historyStamps.filter((s) => s.status === 'approved').length;

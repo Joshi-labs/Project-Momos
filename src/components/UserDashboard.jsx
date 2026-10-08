@@ -132,6 +132,14 @@ function UserDashboardContent() {
     return Object.values(stampCounts).reduce((acc, count) => acc + Math.floor(count / 5), 0);
   }, [stampCounts]);
 
+  const sortedStamps = useMemo(() => {
+    return [...stamps].sort((a, b) => {
+      const timeA = new Date(a.created || a.created_at || 0).getTime();
+      const timeB = new Date(b.created || b.created_at || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [stamps]);
+
   const handleClaimStamp = async () => {
     if (!user) return;
     setFeedback(null);
@@ -392,19 +400,20 @@ function UserDashboardContent() {
               Stamp Activity Log
             </h3>
 
-            {stamps.length === 0 ? (
+            {sortedStamps.length === 0 ? (
               <div className="text-center py-6 text-xs text-zinc-500 font-mono">
                 [ NO STAMPS LOGGED YET // ORDER AT COUNTER TO START ]
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-                {stamps.slice(0, 6).map((s) => {
+                {sortedStamps.slice(0, 5).map((s) => {
                   const timestamp = s.created || s.created_at;
-                  const dateStr = timestamp
-                    ? new Date(timestamp).toLocaleTimeString([], {
+                  const d = timestamp ? new Date(timestamp) : null;
+                  const dateStr = d && !isNaN(d.getTime())
+                    ? `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${d.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
-                      })
+                      })}`
                     : 'Recent';
 
                   return (
