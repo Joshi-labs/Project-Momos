@@ -79,9 +79,11 @@ function AuthContent() {
         
         {/* Left Column: Brand Story & Loyalty Highlights */}
         <div className="lg:col-span-5 space-y-6 text-left">
+          {/* Commented code
           <div className="w-12 h-12 rounded-lg bg-amber-400 text-black border-2 border-black flex items-center justify-center font-black shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)]">
             <Flame className="w-7 h-7 fill-black" />
           </div>
+          */}
 
           <div className="space-y-1.5">
             <span className="text-amber-400 text-xs font-black uppercase tracking-wider block">
