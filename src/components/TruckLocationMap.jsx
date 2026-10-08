@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Clock, Navigation, ExternalLink } from 'lucide-react';
+import { Navigation, ExternalLink } from 'lucide-react';
 
 const LAT = 23.183469;
 const LON = 79.975397;
