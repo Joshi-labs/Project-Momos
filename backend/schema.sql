@@ -35,5 +35,5 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 INSERT INTO users (email, password_hash, name, role)
 VALUES 
     ('admin@momo.com', '$2b$12$s06yKFwauKC8QDB0uqlWu.ZwGrdYP2nDsqNC9eesY7NyBWKnMlbXu', 'Chef Admin', 'admin'),
-    ('customer@momo.com', '$2b$12$pfpIpqiCbtctpEoGQrYYFOBIvArZq3ZTQvbspucx25qhDj8VU47e6', 'Rahul Sharma', 'user')
+    ('customer@momo.com', '$2b$12$pfpIpqiCbtctpEoGQrYYFOBIvArZq3ZTQvbspucx25qhDj8VU47e6', 'Vishwash Joshi', 'user')
 ON CONFLICT (email) DO NOTHING;

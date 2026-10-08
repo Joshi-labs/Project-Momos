@@ -99,6 +99,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health", tags=["Health"])
+def health():
+    return {"status": "ok"}
+
+
 router = APIRouter()
 
 

@@ -208,7 +208,7 @@ function AuthContent() {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder="e.g. Vishwash Joshi"
                       autoComplete="name"
                       className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400 transition-all font-mono"
                     />
