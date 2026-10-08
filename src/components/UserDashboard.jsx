@@ -297,7 +297,7 @@ function UserDashboardContent() {
           <div className="flex items-center justify-between font-mono">
             <h2 className="text-sm sm:text-base font-black text-white uppercase flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-400" />
-              Loyalty Punch Cards (3 Categories)
+              Loyalty Punch Cards
             </h2>
             <span className="text-[11px] text-zinc-400 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded">
               5 STAMPS = 1 FREE
