@@ -19,8 +19,8 @@ const CATEGORIES = [
     name: 'Steam Veg',
     icon: '🥟',
     code: 'STM',
-    badgeClass: 'bg-emerald-950 text-emerald-300 border-emerald-700',
-    stampBg: 'bg-emerald-400 text-black border-2 border-black font-black',
+    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
+    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
   },
   {
     name: 'Afghani',
@@ -33,8 +33,8 @@ const CATEGORIES = [
     name: 'Fried',
     icon: '🔥',
     code: 'FRD',
-    badgeClass: 'bg-orange-950 text-orange-300 border-orange-700',
-    stampBg: 'bg-orange-500 text-black border-2 border-black font-black',
+    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
+    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
   },
 ];
 
