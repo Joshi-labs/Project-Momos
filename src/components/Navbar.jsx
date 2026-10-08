@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { Flame, UtensilsCrossed, Award, ShieldAlert, LogOut, LogIn, Menu, X } from 'lucide-react';
+import { Flame, UtensilsCrossed, Award, LogOut, LogIn, Menu, X } from 'lucide-react';
 
 function NavbarContent({ currentPath = '' }) {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -77,20 +77,6 @@ function NavbarContent({ currentPath = '' }) {
             <Award className="w-3.5 h-3.5" />
             Stamps
           </a>
-
-          {isAdmin && (
-            <a
-              href="/admin"
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono uppercase tracking-wider transition-all border ${
-                getIsActive('/admin')
-                  ? 'bg-red-500 text-white border-red-500'
-                  : 'bg-red-950/40 text-red-400 border-red-800/80 hover:bg-red-900/40'
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              Chef Admin
-            </a>
-          )}
         </nav>
 
         {/* Desktop User / Auth controls */}
@@ -129,15 +115,6 @@ function NavbarContent({ currentPath = '' }) {
 
         {/* Mobile Toggle Button */}
         <div className="flex items-center gap-2 md:hidden">
-          {isAdmin && (
-            <a
-              href="/admin"
-              className="px-2 py-1 rounded bg-red-950 border border-red-800 text-red-300 text-[10px] font-mono font-bold uppercase"
-            >
-              Admin
-            </a>
-          )}
-
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -176,16 +153,6 @@ function NavbarContent({ currentPath = '' }) {
               </span>
               <span>→</span>
             </a>
-
-            {isAdmin && (
-              <a href="/admin" className={getMobileNavLinkClass('/admin')} onClick={() => setMobileMenuOpen(false)}>
-                <span className="flex items-center gap-2 text-red-400">
-                  <ShieldAlert className="w-4 h-4" />
-                  Chef Admin Console
-                </span>
-                <span>→</span>
-              </a>
-            )}
 
             <div className="pt-2 mt-2 border-t border-zinc-800">
               {user ? (

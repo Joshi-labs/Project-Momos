@@ -4,7 +4,8 @@ import { api, pb } from '../api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(pb.authStore.record);
+  // Initialize to null to match SSR output and prevent React hydration mismatch (#418)
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
