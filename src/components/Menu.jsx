@@ -77,14 +77,12 @@ export default function Menu() {
       {/* Main Dishes Section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-          <h2 className="text-lg sm:text-xl font-black text-white uppercase font-mono tracking-tight flex items-center gap-2">
-            <span>Signature Plates</span>
-            <span className="text-xs text-amber-400 font-mono font-normal">
-              [ STAMP ELIGIBLE ]
-            </span>
+          <h2 className="text-lg sm:text-xl font-black text-white uppercase font-mono tracking-tight">
+            Signature Plates
           </h2>
-          <span className="text-xs font-mono text-zinc-400 hidden sm:inline-block">
-            Made Fresh Daily
+
+          <span className="text-[11px] font-mono text-amber-400">
+            [ STAMP ELIGIBLE ]
           </span>
         </div>
 
@@ -176,10 +174,13 @@ export default function Menu() {
       {/* Counter Add-ons & Extra Dips */}
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-          <h2 className="text-base sm:text-lg font-black text-white uppercase font-mono tracking-tight flex items-center gap-2">
-            <span>Sides & Add-ons</span>
+          <h2 className="text-lg sm:text-xl font-black text-white uppercase font-mono tracking-tight">
+            Sides & Add-ons
           </h2>
-          <span className="text-[11px] font-mono text-zinc-500">[ COUNTER EXTRAS ]</span>
+
+          <span className="text-[11px] font-mono text-zinc-500">
+            [ COUNTER EXTRAS ]
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
