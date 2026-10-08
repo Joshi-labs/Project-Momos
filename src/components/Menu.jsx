@@ -178,11 +178,8 @@ export default function Menu() {
         <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
           <h2 className="text-base sm:text-lg font-black text-white uppercase font-mono tracking-tight flex items-center gap-2">
             <span>Sides & Add-ons</span>
-            <span className="text-xs text-zinc-500 font-mono font-normal">
-              [ COUNTER EXTRAS ]
-            </span>
           </h2>
-          <span className="text-[11px] font-mono text-zinc-500">Available at Food Truck</span>
+          <span className="text-[11px] font-mono text-zinc-500">[ COUNTER EXTRAS ]</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
