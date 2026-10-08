@@ -35,10 +35,10 @@ CREATE DATABASE momo_db;
 ## 3. Configure `.env`
 Check `backend/.env` and update your PostgreSQL credentials if needed:
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/momo_db
+DATABASE_URL=postgresql://postgres:postgres@192.168.1.10:5432/momo_db
 SECRET_KEY=momo_food_truck_jwt_secret_key_change_me_in_production
 ACCESS_TOKEN_EXPIRE_DAYS=120
-CORS_ORIGINS=https://momoos.shop,https://www.momoos.shop
+CORS_ORIGINS=https://momoos.shop,https://www.momoos.shop,http://localhost:4321,http://localhost:3000,http://192.168.1.10:4321
 ```
 
 ## 4. Install & Run

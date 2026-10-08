@@ -60,3 +60,9 @@ def pop_claim(claim_id: str) -> Optional[dict]:
     _cleanup_expired()
     return _claims.pop(str(claim_id), None)
 
+
+def restore_claim(claim: dict):
+    """Restore a previously popped claim back into memory if DB operation fails."""
+    if claim and "id" in claim:
+        _claims[claim["id"]] = claim
+
