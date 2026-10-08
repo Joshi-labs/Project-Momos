@@ -92,7 +92,6 @@ function UserDashboardContent() {
     if (!user) return;
     fetchMyStamps();
 
-    // Subscribe to real-time PocketBase stamp changes
     const unsub = api.subscribeStamps((e) => {
       // Whenever a stamp is created/updated/deleted for this user
       if (e.record && (!e.record.user || e.record.user === user?.id)) {
@@ -406,7 +405,7 @@ function UserDashboardContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-                {sortedStamps.slice(0, 5).map((s) => {
+                {sortedStamps.slice(0, 4).map((s) => {
                   const timestamp = s.created || s.created_at;
                   const d = timestamp ? new Date(timestamp) : null;
                   const dateStr = d && !isNaN(d.getTime())
