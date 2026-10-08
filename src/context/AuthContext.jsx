@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Sync React state on any PocketBase auth change (login, logout, refresh)
     const unsubscribe = pb.authStore.onChange((token, record) => {
       setUser(record);
     }, true);

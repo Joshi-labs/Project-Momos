@@ -32,15 +32,33 @@ function AdminDashboardContent() {
 
   const fetchStamps = useCallback(async () => {
     try {
-      // 1. Fetch pending stamps (FIFO queue)
-      const pending = await api.getAdminPendingStamps();
-      setPendingStamps(pending || []);
+      // Concurrently fetch pending queue and processed history
+      const [pending, history] = await Promise.all([
+        api.getAdminPendingStamps(),
+        api.getAdminHistoryStamps(30),
+      ]);
 
-      // 2. Fetch recently processed stamps
-      const history = await api.getAdminHistoryStamps(30);
-      setHistoryStamps(history || []);
+      let hasChanges = false;
+      setPendingStamps((prev) => {
+        if (prev !== pending) {
+          hasChanges = true;
+          return pending || [];
+        }
+        return prev;
+      });
 
-      setLastUpdated(new Date());
+      setHistoryStamps((prev) => {
+        if (prev !== history) {
+          hasChanges = true;
+          return history || [];
+        }
+        return prev;
+      });
+
+      // Only refresh sync timestamp when actual data changed (avoids re-rendering on 304)
+      if (hasChanges) {
+        setLastUpdated(new Date());
+      }
     } catch (err) {
       console.error('Error fetching admin stamps:', err.message);
     } finally {
@@ -56,12 +74,28 @@ function AdminDashboardContent() {
       fetchStamps();
     });
 
+    // 2.5s responsive polling, pausing when tab is inactive to preserve bandwidth & CPU
     const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       fetchStamps();
     }, 2500);
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStamps();
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
     return () => {
       clearInterval(pollInterval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
       if (typeof unsub === 'function') {
         unsub();
       } else {
@@ -192,7 +226,10 @@ function AdminDashboardContent() {
 
             <button
               type="button"
-              onClick={fetchStamps}
+              onClick={() => {
+                fetchStamps();
+                setLastUpdated(new Date());
+              }}
               disabled={loading}
               className="ml-auto sm:ml-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-xs font-bold text-white active:scale-95 transition-all"
             >

@@ -1,8 +1,10 @@
 import asyncio
+import hashlib
+import json
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
@@ -36,6 +38,39 @@ def format_db_stamp(s: Stamp) -> dict:
         if s.user
         else None,
     }
+
+
+def json_etag_response(request: Request, data: any) -> Response:
+    """
+    Returns HTTP 304 Not Modified if the client's If-None-Match header
+    matches the deterministic SHA-1 hash of the JSON response.
+    Eliminates redundant data transfer during high-frequency dashboard polling.
+    """
+    body_str = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    body_bytes = body_str.encode("utf-8")
+    content_hash = hashlib.sha1(body_bytes).hexdigest()
+    etag = f'"{content_hash}"'
+
+    client_etag = request.headers.get("if-none-match")
+    if client_etag:
+        client_clean = client_etag.strip().lstrip("W/").strip('"')
+        if client_clean == content_hash:
+            return Response(
+                status_code=status.HTTP_304_NOT_MODIFIED,
+                headers={
+                    "ETag": etag,
+                    "Cache-Control": "no-cache, must-revalidate",
+                },
+            )
+
+    return Response(
+        content=body_bytes,
+        media_type="application/json",
+        headers={
+            "ETag": etag,
+            "Cache-Control": "no-cache, must-revalidate",
+        },
+    )
 
 
 def seed_users(db: Session):
@@ -96,6 +131,7 @@ app.add_middleware(
     allow_credentials="*" not in origins,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["ETag"],
 )
 
 
@@ -169,7 +205,11 @@ def claim_stamp(data: StampClaim, user: User = Depends(get_current_user)):
 
 
 @router.get("/stamps/my")
-def get_my_stamps(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_my_stamps(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     approved = [
         format_db_stamp(s)
         for s in db.query(Stamp)
@@ -179,17 +219,21 @@ def get_my_stamps(user: User = Depends(get_current_user), db: Session = Depends(
         .all()
     ]
     pending = claims.get_user_pending(user.id)
-    return pending + approved
+    return json_etag_response(request, pending + approved)
 
 
 # --- CHEF ADMIN (Approves memory claims into PostgreSQL) ---
 @router.get("/admin/stamps/pending")
-def get_pending_stamps(_: User = Depends(get_current_admin)):
-    return claims.get_active_claims()
+def get_pending_stamps(
+    request: Request,
+    _: User = Depends(get_current_admin),
+):
+    return json_etag_response(request, claims.get_active_claims())
 
 
 @router.get("/admin/stamps/history")
 def get_history_stamps(
+    request: Request,
     limit: int = Query(30, ge=1, le=100),
     _: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
@@ -201,7 +245,7 @@ def get_history_stamps(
         .limit(limit)
         .all()
     )
-    return [format_db_stamp(s) for s in stamps]
+    return json_etag_response(request, [format_db_stamp(s) for s in stamps])
 
 
 @router.patch("/admin/stamps/{stamp_id}")

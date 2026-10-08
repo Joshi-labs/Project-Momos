@@ -5,6 +5,13 @@ const API_URL = import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL |
 const TOKEN_KEY = 'momo_auth_token';
 const USER_KEY = 'momo_auth_user';
 
+// In-memory ETag cache for conditional GET requests: cacheKey -> { etag, data }
+const etagCache = new Map();
+
+export function clearApiCache() {
+  etagCache.clear();
+}
+
 // In-memory + LocalStorage Auth Store emulating session state
 class SimpleAuthStore {
   constructor() {
@@ -49,6 +56,7 @@ class SimpleAuthStore {
     } catch (e) {
       console.warn('Could not clear auth in localStorage:', e);
     }
+    etagCache.clear();
     this._notify('', null);
   }
 
@@ -86,9 +94,10 @@ export function formatPbError(err) {
 
 export const formatError = formatPbError;
 
-// Internal fetch request wrapper with auth header injection
+// Internal fetch request wrapper with auth header injection and ETag conditional GET
 async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
+  const method = (options.method || 'GET').toUpperCase();
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -99,6 +108,16 @@ async function request(endpoint, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  // Cache key is partitioned by user token and URL
+  const cacheKey = `${token || 'anon'}:${url}`;
+
+  if (method === 'GET') {
+    const cached = etagCache.get(cacheKey);
+    if (cached?.etag) {
+      headers['If-None-Match'] = cached.etag;
+    }
+  }
+
   let response;
   try {
     response = await fetch(url, { ...options, headers });
@@ -106,6 +125,16 @@ async function request(endpoint, options = {}) {
     throw new Error(
       `Unable to reach the server at ${API_URL}. Please check your connection and try again.`
     );
+  }
+
+  // HTTP 304 Not Modified: Return existing cached data directly without payload download
+  if (response.status === 304) {
+    const cached = etagCache.get(cacheKey);
+    if (cached) {
+      const newEtag = response.headers.get('etag');
+      if (newEtag) cached.etag = newEtag;
+      return cached.data;
+    }
   }
 
   let data = null;
@@ -122,6 +151,20 @@ async function request(endpoint, options = {}) {
       (typeof data === 'string' && data) ||
       `Request failed with status ${response.status}`;
     throw new Error(errorMsg);
+  }
+
+  if (method === 'GET') {
+    const etag = response.headers.get('etag');
+    if (etag) {
+      etagCache.set(cacheKey, { etag, data });
+    }
+  } else {
+    // If mutating records, clear stamp cache so next GET fetches fresh state
+    for (const key of etagCache.keys()) {
+      if (key.includes('/stamps') || key.includes('/admin/stamps')) {
+        etagCache.delete(key);
+      }
+    }
   }
 
   return data;

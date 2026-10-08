@@ -80,7 +80,8 @@ function UserDashboardContent() {
 
     try {
       const data = await api.getMyStamps();
-      setStamps(data || []);
+      // Only update state if data reference changed (304 Not Modified retains same reference)
+      setStamps((prev) => (prev === data ? prev : (data || [])));
     } catch (err) {
       console.error('Failed to load stamps:', err);
     } finally {
@@ -99,12 +100,28 @@ function UserDashboardContent() {
       }
     });
 
+    // Poll every 2.5s, pausing when tab is inactive to preserve bandwidth & CPU
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       fetchMyStamps();
     }, 2500);
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMyStamps();
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
     return () => {
       clearInterval(interval);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
       if (typeof unsub === 'function') {
         unsub();
       } else {
