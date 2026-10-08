@@ -10,7 +10,7 @@ const MENU_ITEMS = [
     price: '₹50',
     servings: '8 PCS',
     spiceLevel: '🌶️ MILD & FRESH',
-    image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=600&q=80',
+    image: '/images/veg.jpg',
     description:
       'Hand-rolled dumplings packed with freshly shredded mountain greens, ginger, and aromatic spices. Steamed fresh to order and served piping hot with red chili sesame dip.',
     highlights: ['100% Vegetarian', 'Traditional Steamer', 'Low Calorie', 'Spicy Sesame Chutney'],
@@ -24,7 +24,7 @@ const MENU_ITEMS = [
     price: '₹60',
     servings: '8 PCS',
     spiceLevel: '🌶️ CREAMY & SMOKY',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    image: '/images/afghani.jpg',
     description:
       'Tandoor-charred dumplings smothered in rich cashew-cream, malai herbs, chaat masala, and melted butter. Rich, luscious, and deeply satisfying.',
     highlights: ['Rich Cashew Malai', 'Tandoor Charred', 'Butter Drizzle', 'Chef Special'],
@@ -38,7 +38,7 @@ const MENU_ITEMS = [
     price: '₹60',
     servings: '8 PCS',
     spiceLevel: '🌶️🌶️ EXTRA CRISPY',
-    image: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=600&q=80',
+    image: '/images/fried.jpg',
     description:
       'Crisp golden exterior with juicy seasoned vegetables inside. Dusted generously with fiery peri-peri spices and served with our fire dip and cool mayo.',
     highlights: ['Extra Crunchy', 'Peri-Peri Dusted', 'Fiery Dip Included', 'Fresh Made on Order'],
