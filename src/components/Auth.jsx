@@ -90,7 +90,7 @@ function AuthContent() {
               // MEMBER LOGIN TERMINAL
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-              Momo Food Truck Pass
+              Momos Food Truck
             </h1>
             <p className="text-xs text-zinc-400 font-sans leading-relaxed">
               Sign in to collect stamps every time you grab a plate of momos at the truck counter.
@@ -99,7 +99,7 @@ function AuthContent() {
 
           <div className="space-y-3 pt-2">
             <div className="flex items-start gap-3 bg-[#12141a] border-2 border-zinc-800 p-3.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]">
-              <Award className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+              <Award className="w-8 h-8 text-amber-400 mt-0.5 shrink-0" />
               <div>
                 <span className="text-xs font-bold text-white uppercase block">5 Stamps = 1 Free Plate</span>
                 <span className="text-[11px] text-zinc-400 font-sans">Accumulate stamps across Steam Veg, Afghani, or Fried.</span>
@@ -107,7 +107,7 @@ function AuthContent() {
             </div>
 
             <div className="flex items-start gap-3 bg-[#12141a] border-2 border-zinc-800 p-3.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]">
-              <QrCode className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
+              <QrCode className="w-8 h-8 text-orange-400 mt-0.5 shrink-0" />
               <div>
                 <span className="text-xs font-bold text-white uppercase block">Live Counter Verification</span>
                 <span className="text-[11px] text-zinc-400 font-sans">Chef accepts claims directly on their counter screen.</span>
@@ -148,7 +148,7 @@ function AuthContent() {
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                [ Create Pass ]
+                [ Create ID ]
               </button>
             </div>
 
