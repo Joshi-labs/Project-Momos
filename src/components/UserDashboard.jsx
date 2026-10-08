@@ -288,7 +288,7 @@ function UserDashboardContent() {
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-400 space-y-1">
             <span className="text-amber-400 font-bold block uppercase">// COUNTER NOTICE:</span>
             <p className="text-[11px] leading-relaxed">
-              Submitting claims creates a live pending stamp request on the chef’s counter screen. Once verified, this card stamps automatically.
+              Submitting claims creates a live pending stamp request on the chef's counter screen. Once verified, you will get the stamps automatically.
             </p>
           </div>
         </div>
