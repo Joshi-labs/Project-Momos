@@ -28,7 +28,6 @@ function AdminDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [countdown, setCountdown] = useState(10);
   const [toast, setToast] = useState(null);
 
   const fetchStamps = useCallback(async () => {
@@ -42,7 +41,6 @@ function AdminDashboardContent() {
       setHistoryStamps(history || []);
 
       setLastUpdated(new Date());
-      setCountdown(10);
     } catch (err) {
       console.error('Error fetching admin stamps:', err.message);
     } finally {
@@ -60,15 +58,10 @@ function AdminDashboardContent() {
 
     const pollInterval = setInterval(() => {
       fetchStamps();
-    }, 10000);
-
-    const timerInterval = setInterval(() => {
-      setCountdown((prev) => (prev > 1 ? prev - 1 : 10));
-    }, 1000);
+    }, 2500);
 
     return () => {
       clearInterval(pollInterval);
-      clearInterval(timerInterval);
       if (typeof unsub === 'function') {
         unsub();
       } else {
@@ -189,17 +182,17 @@ function AdminDashboardContent() {
           </div>
 
           {/* Polling & Refresh */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full lg:w-auto">
             <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-2 rounded-lg text-xs text-zinc-400">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>LIVE SYNC ({countdown}s)</span>
+              <span>LIVE SYNC</span>
             </div>
 
             <button
               type="button"
               onClick={fetchStamps}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-xs font-bold text-white active:scale-95 transition-all"
+              className="ml-auto sm:ml-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-xs font-bold text-white active:scale-95 transition-all"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : ''}`} />
               <span>Poll</span>
