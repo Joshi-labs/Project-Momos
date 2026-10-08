@@ -13,7 +13,7 @@ DATABASE_URL = os.getenv(
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Enforce PostgreSQL strictly - remove any SQLite fallback
+
 if not (DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgresql+")):
     raise ValueError(
         f"Unsupported database scheme. Only PostgreSQL is supported: {DATABASE_URL}"

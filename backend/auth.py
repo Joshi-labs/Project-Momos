@@ -12,9 +12,9 @@ from models import User
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "momo_food_truck_jwt_secret_key_change_me_in_production")
+SECRET_KEY = os.getenv("SECRET_KEY", "jwt_secret_key_change_me_in_production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS", "120"))  # 120 days
+ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS", "120"))
 
 security = HTTPBearer(auto_error=False)
 

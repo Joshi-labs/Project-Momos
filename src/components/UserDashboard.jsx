@@ -102,7 +102,7 @@ function UserDashboardContent() {
 
     const interval = setInterval(() => {
       fetchMyStamps();
-    }, 12000);
+    }, 2500);
 
     return () => {
       clearInterval(interval);

@@ -87,8 +87,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Momo Loyalty API", lifespan=lifespan)
 
 default_cors = (
-    "https://momoos.shop,https://www.momoos.shop,"
-    "http://localhost:4321,http://localhost:3000,http://127.0.0.1:4321,http://192.168.1.10:4321"
+    "https://momoos.shop,https://www.momoos.shop"
 )
 origins = [o.strip() for o in os.getenv("CORS_ORIGINS", default_cors).split(",") if o.strip()]
 app.add_middleware(
