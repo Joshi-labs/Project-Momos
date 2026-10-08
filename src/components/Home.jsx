@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Award, QrCode, UtensilsCrossed, ChevronRight, ArrowRight, ArrowDown, Smartphone } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import TruckLocationMap from '../components/TruckLocationMap';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import TruckLocationMap from './TruckLocationMap';
 
 const STEPS = [
   {
@@ -52,7 +51,7 @@ const SIGNATURE_PLATES = [
   },
 ];
 
-export default function Home() {
+function HomeContent() {
   const { user } = useAuth();
 
   return (
@@ -79,22 +78,22 @@ export default function Home() {
 
             {/* Boxy Tactile Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2 font-mono">
-              <Link
-                to={user ? '/user' : '/auth'}
+              <a
+                href={user ? '/user' : '/auth'}
                 className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] active:translate-x-0.5 active:translate-y-0.5 transition-all"
               >
                 <QrCode className="w-4 h-4" />
                 <span>{user ? 'Open Stamp Card' : 'Sign In & Collect Stamps'}</span>
                 <ChevronRight className="w-4 h-4" />
-              </Link>
+              </a>
 
-              <Link
-                to="/menu"
+              <a
+                href="/menu"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-white font-bold text-xs uppercase tracking-wider shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)] active:translate-x-0.5 active:translate-y-0.5 transition-all"
               >
                 <UtensilsCrossed className="w-4 h-4 text-orange-400" />
                 <span>View Truck Menu</span>
-              </Link>
+              </a>
             </div>
 
 
@@ -235,9 +234,9 @@ export default function Home() {
 
               <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-400 font-bold">{item.price}</span>
-                <Link to={item.link} className="text-amber-400 font-bold hover:underline">
+                <a href={item.link} className="text-amber-400 font-bold hover:underline">
                   [ Claim Stamp → ]
-                </Link>
+                </a>
               </div>
             </div>
           ))}
@@ -249,3 +248,12 @@ export default function Home() {
     </div>
   );
 }
+
+export default function Home(props) {
+  return (
+    <AuthProvider>
+      <HomeContent {...props} />
+    </AuthProvider>
+  );
+}
+

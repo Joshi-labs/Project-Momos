@@ -30,7 +30,7 @@ def seed_users(db: Session):
     if not db.query(User).filter(User.email == "admin@momo.com").first():
         db.add(User(email="admin@momo.com", password_hash=hash_password("admin123"), name="Chef Admin", role="admin"))
     if not db.query(User).filter(User.email == "customer@momo.com").first():
-        db.add(User(email="customer@momo.com", password_hash=hash_password("customer123"), name="Rahul Sharma", role="user"))
+        db.add(User(email="customer@momo.com", password_hash=hash_password("customer123"), name="Vishwash Joshi", role="user"))
     db.commit()
 
 

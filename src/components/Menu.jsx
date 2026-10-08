@@ -1,7 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Award, QrCode, ChevronRight, Check, Sparkles, Flame, Coffee } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 const MENU_ITEMS = [
   {
@@ -73,8 +71,6 @@ const ADDONS = [
 ];
 
 export default function Menu() {
-  const { user } = useAuth();
-
   return (
     <div className="space-y-8 pb-16">
 
@@ -164,13 +160,13 @@ export default function Menu() {
                   <span className="text-zinc-300">+1 Stamp</span>
                 </div>
 
-                <Link
-                  to={item.link}
+                <a
+                  href={item.link}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)] active:translate-x-0.5 active:translate-y-0.5 transition-all"
                 >
                   <span>Claim Stamp</span>
                   <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
+                </a>
               </div>
             </div>
           ))}
@@ -219,3 +215,4 @@ export default function Menu() {
     </div>
   );
 }
+

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import { Flame, Mail, Lock, User as UserIcon, LogIn, UserPlus, AlertCircle, CheckCircle2, Award, QrCode } from 'lucide-react';
 
-export default function Auth() {
+function AuthContent() {
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
@@ -18,10 +16,10 @@ export default function Auth() {
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    if (user) {
-      navigate('/user', { replace: true });
+    if (user && typeof window !== 'undefined') {
+      window.location.replace('/user');
     }
-  }, [user, navigate]);
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,10 +45,14 @@ export default function Auth() {
     try {
       if (isSignUp) {
         await signUp(email, password, passwordConfirm, name);
-        navigate('/user', { replace: true });
+        if (typeof window !== 'undefined') {
+          window.location.replace('/user');
+        }
       } else {
         await signIn(email, password);
-        navigate('/user', { replace: true });
+        if (typeof window !== 'undefined') {
+          window.location.replace('/user');
+        }
       }
     } catch (err) {
       setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
@@ -301,3 +303,12 @@ export default function Auth() {
     </div>
   );
 }
+
+export default function Auth(props) {
+  return (
+    <AuthProvider>
+      <AuthContent {...props} />
+    </AuthProvider>
+  );
+}
+

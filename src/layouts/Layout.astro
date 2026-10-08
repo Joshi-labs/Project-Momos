@@ -1,0 +1,58 @@
+---
+import '../index.css';
+import Navbar from '../components/Navbar.jsx';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Momoos Shop Jabalpur",
+  description = "Fresh momos food truck in Jabalpur. Collect 5 stamps on your digital loyalty card and get 1 free plate!"
+} = Astro.props;
+
+const pathname = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+
+    <meta property="og:title" content={title} />
+    <meta name="description" content={description} />
+    <meta property="og:description" content="Fresh momos food truck in Jabalpur. Order Steam Veg, Afghani, or Fried momos, collect 5 stamps and get 1 free plate!" />
+    <meta property="og:image" content="https://momoos.shop/preview.png" />
+    <meta property="og:type" content="website" />
+  </head>
+  <body class="bg-zinc-950 text-zinc-100">
+    <div class="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col selection:bg-amber-500 selection:text-zinc-950">
+      <!-- Responsive Navbar hydrated on client -->
+      <Navbar client:load currentPath={pathname} />
+
+      <!-- Main Container -->
+      <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
+        <slot />
+      </main>
+
+      <!-- Bottom Footer -->
+      <footer class="border-t border-zinc-800/80 bg-zinc-950 py-6 text-center text-xs text-zinc-500 font-mono">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-zinc-300">
+              Momo Food Truck • Digital Loyalty Card
+            </span>
+          </div>
+          <div class="flex items-center gap-4 text-zinc-400 text-xs font-mono">
+            <span>Buy 5 Plates = 1 Free Plate</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
+

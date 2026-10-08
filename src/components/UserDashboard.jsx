@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import ProtectedRoute from './ProtectedRoute';
 import { api } from '../api';
 import {
   Award,
@@ -38,14 +38,26 @@ const CATEGORIES = [
   },
 ];
 
-export default function UserDashboard() {
+function UserDashboardContent() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const preselect = new URLSearchParams(window.location.search).get('category');
+      if (preselect && CATEGORIES.some((c) => c.name === preselect)) {
+        return preselect;
+      }
+    }
+    return 'Steam Veg';
+  });
 
-  const preselect = searchParams.get('category');
-  const [selectedCategory, setSelectedCategory] = useState(
-    preselect && CATEGORIES.some((c) => c.name === preselect) ? preselect : 'Steam Veg'
-  );
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const preselect = new URLSearchParams(window.location.search).get('category');
+      if (preselect && CATEGORIES.some((c) => c.name === preselect)) {
+        setSelectedCategory(preselect);
+      }
+    }
+  }, []);
 
   const [stamps, setStamps] = useState([]);
   const [loadingStamps, setLoadingStamps] = useState(true);
@@ -465,3 +477,14 @@ export default function UserDashboard() {
     </div>
   );
 }
+
+export default function UserDashboard(props) {
+  return (
+    <AuthProvider>
+      <ProtectedRoute>
+        <UserDashboardContent {...props} />
+      </ProtectedRoute>
+    </AuthProvider>
+  );
+}
+

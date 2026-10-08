@@ -1,6 +1,6 @@
 // Fast, lightweight API client connecting to Python FastAPI + PostgreSQL backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.momoos.shop';
+const API_URL = import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || 'https://api.momoos.shop';
 
 const TOKEN_KEY = 'momo_auth_token';
 const USER_KEY = 'momo_auth_user';

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AuthProvider } from '../context/AuthContext';
+import ProtectedRoute from './ProtectedRoute';
 import { api } from '../api';
 import {
   ShieldAlert,
@@ -11,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
   const [pendingStamps, setPendingStamps] = useState([]);
   const [historyStamps, setHistoryStamps] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
@@ -358,3 +360,14 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+export default function AdminDashboard(props) {
+  return (
+    <AuthProvider>
+      <ProtectedRoute requireAdmin={true}>
+        <AdminDashboardContent {...props} />
+      </ProtectedRoute>
+    </AuthProvider>
+  );
+}
+

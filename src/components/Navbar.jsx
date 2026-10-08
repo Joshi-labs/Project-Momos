@@ -1,43 +1,53 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import { Flame, UtensilsCrossed, Award, ShieldAlert, LogOut, LogIn, Menu, X } from 'lucide-react';
 
-export default function Navbar() {
+function NavbarContent({ currentPath = '' }) {
   const { user, profile, isAdmin, signOut } = useAuth();
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
       await signOut();
       setMobileMenuOpen(false);
-      navigate('/auth');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth';
+      }
     } catch (err) {
       console.error('Logout error:', err);
     }
   };
 
-  const navLinkClass = ({ isActive }) =>
-    `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase font-mono transition-all border ${
-      isActive
+  const getIsActive = (path) => {
+    const activePath = (currentPath || (typeof window !== 'undefined' ? window.location.pathname : '')).replace(/\/$/, '') || '/';
+    const targetPath = path.replace(/\/$/, '') || '/';
+    return activePath === targetPath;
+  };
+
+  const getNavLinkClass = (path) => {
+    const active = getIsActive(path);
+    return `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase font-mono transition-all border ${
+      active
         ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
         : 'text-zinc-400 hover:text-white bg-zinc-900/60 border-zinc-800/80 hover:border-zinc-700'
     }`;
+  };
 
-  const mobileNavLinkClass = ({ isActive }) =>
-    `flex items-center justify-between px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-wider font-mono transition-all border ${
-      isActive
+  const getMobileNavLinkClass = (path) => {
+    const active = getIsActive(path);
+    return `flex items-center justify-between px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-wider font-mono transition-all border ${
+      active
         ? 'bg-amber-400 text-black border-amber-400'
         : 'text-zinc-300 hover:text-white bg-zinc-900 border-zinc-800'
     }`;
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#0d0e12]/95 backdrop-blur-sm border-b-2 border-zinc-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
-        <NavLink
-          to="/"
+        <a
+          href="/"
           className="flex items-center gap-3 group transition-transform active:scale-95"
           onClick={() => setMobileMenuOpen(false)}
         >
@@ -49,39 +59,37 @@ export default function Navbar() {
               MOMOOS TRUCK
             </span>
           </div>
-        </NavLink>
+        </a>
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-2">
-          <NavLink to="/" className={navLinkClass}>
+          <a href="/" className={getNavLinkClass('/')}>
             <Flame className="w-3.5 h-3.5" />
             Home
-          </NavLink>
+          </a>
 
-          <NavLink to="/menu" className={navLinkClass}>
+          <a href="/menu" className={getNavLinkClass('/menu')}>
             <UtensilsCrossed className="w-3.5 h-3.5" />
             Menu
-          </NavLink>
+          </a>
 
-          <NavLink to="/user" className={navLinkClass}>
+          <a href="/user" className={getNavLinkClass('/user')}>
             <Award className="w-3.5 h-3.5" />
             Stamps
-          </NavLink>
+          </a>
 
           {isAdmin && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono uppercase tracking-wider transition-all border ${
-                  isActive
-                    ? 'bg-red-500 text-white border-red-500'
-                    : 'bg-red-950/40 text-red-400 border-red-800/80 hover:bg-red-900/40'
-                }`
-              }
+            <a
+              href="/admin"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono uppercase tracking-wider transition-all border ${
+                getIsActive('/admin')
+                  ? 'bg-red-500 text-white border-red-500'
+                  : 'bg-red-950/40 text-red-400 border-red-800/80 hover:bg-red-900/40'
+              }`}
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               Chef Admin
-            </NavLink>
+            </a>
           )}
         </nav>
 
@@ -109,25 +117,25 @@ export default function Navbar() {
               </button>
             </div>
           ) : (
-            <NavLink
-              to="/auth"
+            <a
+              href="/auth"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs font-mono tracking-wider uppercase border border-amber-300 active:scale-95 transition-all shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
             >
               <LogIn className="w-3.5 h-3.5" />
               Sign In
-            </NavLink>
+            </a>
           )}
         </div>
 
         {/* Mobile Toggle Button */}
         <div className="flex items-center gap-2 md:hidden">
           {isAdmin && (
-            <NavLink
-              to="/admin"
+            <a
+              href="/admin"
               className="px-2 py-1 rounded bg-red-950 border border-red-800 text-red-300 text-[10px] font-mono font-bold uppercase"
             >
               Admin
-            </NavLink>
+            </a>
           )}
 
           <button
@@ -145,38 +153,38 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden max-w-6xl mx-auto px-4 pb-4 pt-3 bg-[#0d0e12] border-b-2 border-zinc-800">
           <nav className="flex flex-col gap-2">
-            <NavLink to="/" className={mobileNavLinkClass} onClick={() => setMobileMenuOpen(false)}>
+            <a href="/" className={getMobileNavLinkClass('/')} onClick={() => setMobileMenuOpen(false)}>
               <span className="flex items-center gap-2">
                 <Flame className="w-4 h-4 text-amber-400" />
                 Home Truck
               </span>
               <span>→</span>
-            </NavLink>
+            </a>
 
-            <NavLink to="/menu" className={mobileNavLinkClass} onClick={() => setMobileMenuOpen(false)}>
+            <a href="/menu" className={getMobileNavLinkClass('/menu')} onClick={() => setMobileMenuOpen(false)}>
               <span className="flex items-center gap-2">
                 <UtensilsCrossed className="w-4 h-4 text-orange-400" />
                 Food Truck Menu
               </span>
               <span>→</span>
-            </NavLink>
+            </a>
 
-            <NavLink to="/user" className={mobileNavLinkClass} onClick={() => setMobileMenuOpen(false)}>
+            <a href="/user" className={getMobileNavLinkClass('/user')} onClick={() => setMobileMenuOpen(false)}>
               <span className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-400" />
                 My Stamp Card
               </span>
               <span>→</span>
-            </NavLink>
+            </a>
 
             {isAdmin && (
-              <NavLink to="/admin" className={mobileNavLinkClass} onClick={() => setMobileMenuOpen(false)}>
+              <a href="/admin" className={getMobileNavLinkClass('/admin')} onClick={() => setMobileMenuOpen(false)}>
                 <span className="flex items-center gap-2 text-red-400">
                   <ShieldAlert className="w-4 h-4" />
                   Chef Admin Console
                 </span>
                 <span>→</span>
-              </NavLink>
+              </a>
             )}
 
             <div className="pt-2 mt-2 border-t border-zinc-800">
@@ -199,19 +207,27 @@ export default function Navbar() {
                   </button>
                 </div>
               ) : (
-                <NavLink
-                  to="/auth"
+                <a
+                  href="/auth"
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-amber-400 text-black font-black font-mono text-xs uppercase"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <LogIn className="w-4 h-4" />
                   Sign In / Create Account
-                </NavLink>
+                </a>
               )}
             </div>
           </nav>
         </div>
       )}
     </header>
+  );
+}
+
+export default function Navbar(props) {
+  return (
+    <AuthProvider>
+      <NavbarContent {...props} />
+    </AuthProvider>
   );
 }

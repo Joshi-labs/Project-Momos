@@ -1,10 +1,15 @@
-import React from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function ProtectedRoute({ children, requireAdmin = false }) {
   const { user, isAdmin, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user && typeof window !== 'undefined') {
+      window.location.replace('/auth');
+    }
+  }, [loading, user]);
 
   if (loading) {
     return (
@@ -16,7 +21,12 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+        <span className="text-xs font-bold tracking-widest uppercase">[ REDIRECTING TO SIGN IN... ]</span>
+      </div>
+    );
   }
 
   if (requireAdmin && !isAdmin) {
@@ -42,13 +52,13 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
               </p>
             </div>
 
-            <Link
-              to="/user"
+            <a
+              href="/user"
               className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Customer Stamp Card</span>
-            </Link>
+            </a>
           </div>
         </div>
       </div>
