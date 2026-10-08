@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import ProtectedRoute from './ProtectedRoute';
 import { api } from '../api';
 import {
   Award,
@@ -12,6 +11,7 @@ import {
   RefreshCw,
   AlertCircle,
   X,
+  Loader2,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -39,7 +39,26 @@ const CATEGORIES = [
 ];
 
 function UserDashboardContent() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user && typeof window !== 'undefined') {
+      window.location.replace('/auth');
+    }
+  }, [loading, user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION // PLEASE WAIT ]</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
   const [selectedCategory, setSelectedCategory] = useState(() => {
     if (typeof window !== 'undefined') {
       const preselect = new URLSearchParams(window.location.search).get('category');
@@ -481,9 +500,7 @@ function UserDashboardContent() {
 export default function UserDashboard(props) {
   return (
     <AuthProvider>
-      <ProtectedRoute>
-        <UserDashboardContent {...props} />
-      </ProtectedRoute>
+      <UserDashboardContent {...props} />
     </AuthProvider>
   );
 }

@@ -3,7 +3,13 @@ import Layout from '../../layouts/Layout.astro';
 import UserDashboard from '../../components/UserDashboard.jsx';
 ---
 
+<!-- Instant client guard: redirects immediately before React loads -->
+<script is:inline>
+  if (!localStorage.getItem('momo_auth_token')) {
+    window.location.replace('/auth');
+  }
+</script>
+
 <Layout title="My Stamp Card • Momoos Shop" description="Your Momoos digital loyalty stamp card. Collect stamps and redeem free plates.">
   <UserDashboard client:load />
 </Layout>
-

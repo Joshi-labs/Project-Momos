@@ -3,7 +3,13 @@ import Layout from '../../layouts/Layout.astro';
 import AdminDashboard from '../../components/AdminDashboard.jsx';
 ---
 
+<!-- Instant client guard: redirects immediately before React loads -->
+<script is:inline>
+  if (!localStorage.getItem('momo_auth_token')) {
+    window.location.replace('/auth');
+  }
+</script>
+
 <Layout title="Chef Admin Console • Momoos Shop" description="Chef Admin counter console for verifying and punching Momoos loyalty stamps.">
   <AdminDashboard client:load />
 </Layout>
-

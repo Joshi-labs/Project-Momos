@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AuthProvider } from '../context/AuthContext';
-import ProtectedRoute from './ProtectedRoute';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import {
   ShieldAlert,
@@ -11,9 +10,18 @@ import {
   User,
   Check,
   X,
+  Loader2,
+  ArrowLeft,
 } from 'lucide-react';
 
 function AdminDashboardContent() {
+  const { user, isAdmin, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !user && typeof window !== 'undefined') {
+      window.location.replace('/auth');
+    }
+  }, [authLoading, user]);
   const [pendingStamps, setPendingStamps] = useState([]);
   const [historyStamps, setHistoryStamps] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
@@ -106,6 +114,55 @@ function AdminDashboardContent() {
 
   const approvedCount = historyStamps.filter((s) => s.status === 'approved').length;
   const rejectedCount = historyStamps.filter((s) => s.status === 'rejected').length;
+
+  if (authLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION // PLEASE WAIT ]</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-lg mx-auto py-12 px-4 text-center font-mono">
+        <div className="bg-[#12141a] border-2 border-red-700/80 rounded-xl p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.6)]">
+          <div className="w-14 h-14 rounded-lg bg-red-950 border-2 border-red-700 mx-auto flex items-center justify-center text-red-400 mb-4">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <span className="text-red-400 text-xs font-bold uppercase tracking-wider block mb-1">
+            // ACCESS RESTRICTED // 403
+          </span>
+          <h2 className="text-xl font-black text-white uppercase mb-2">Chef Admin Required</h2>
+          <p className="text-xs text-zinc-400 font-sans max-w-sm mx-auto mb-6 leading-relaxed">
+            This verification console is restricted to food truck managers and staff. Your account ({user.email}) is currently set as customer role.
+          </p>
+
+          <div className="space-y-4 text-left">
+            <div className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
+              <span className="text-amber-400 font-bold block mb-1">HOW TO PROMOTE IN POSTGRESQL:</span>
+              <p className="text-zinc-300 block bg-black/40 p-2 rounded border border-zinc-800">
+                In PostgreSQL terminal or pgAdmin &rarr; run: <code>UPDATE users SET role = &apos;admin&apos; WHERE email = &apos;{user.email}&apos;;</code>
+              </p>
+            </div>
+
+            <a
+              href="/user"
+              className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Customer Stamp Card</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-20">
@@ -364,9 +421,7 @@ function AdminDashboardContent() {
 export default function AdminDashboard(props) {
   return (
     <AuthProvider>
-      <ProtectedRoute requireAdmin={true}>
-        <AdminDashboardContent {...props} />
-      </ProtectedRoute>
+      <AdminDashboardContent {...props} />
     </AuthProvider>
   );
 }
