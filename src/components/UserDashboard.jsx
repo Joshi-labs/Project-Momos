@@ -396,7 +396,7 @@ function UserDashboardContent() {
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)]">
             <h3 className="text-xs font-black text-white uppercase font-mono mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4 text-zinc-400" />
-              Stamp Activity Log
+              Stamp Activity Log (last 5)
             </h3>
 
             {sortedStamps.length === 0 ? (
@@ -405,7 +405,7 @@ function UserDashboardContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-                {sortedStamps.slice(0, 4).map((s) => {
+                {sortedStamps.slice(0, 5).map((s) => {
                   const timestamp = s.created || s.created_at;
                   const d = timestamp ? new Date(timestamp) : null;
                   const dateStr = d && !isNaN(d.getTime())
