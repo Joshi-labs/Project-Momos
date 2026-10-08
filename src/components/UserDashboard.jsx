@@ -47,18 +47,6 @@ function UserDashboardContent() {
     }
   }, [loading, user]);
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
-        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION // PLEASE WAIT ]</span>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
   const [selectedCategory, setSelectedCategory] = useState(() => {
     if (typeof window !== 'undefined') {
       const preselect = new URLSearchParams(window.location.search).get('category');
@@ -101,6 +89,7 @@ function UserDashboardContent() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
     fetchMyStamps();
 
     // Subscribe to real-time PocketBase stamp changes
@@ -164,6 +153,19 @@ function UserDashboardContent() {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION // PLEASE WAIT ]</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="space-y-8 pb-16">
