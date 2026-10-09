@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { Flame, Mail, Lock, User as UserIcon, LogIn, UserPlus, AlertCircle, CheckCircle2, Award, QrCode } from 'lucide-react';
 
 function AuthContent() {
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, oauthError } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
@@ -14,12 +14,30 @@ function AuthContent() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [oauthProcessing, setOauthProcessing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('code')) {
+        setOauthProcessing(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (user && typeof window !== 'undefined') {
       window.location.replace('/user');
     }
   }, [user]);
+
+  useEffect(() => {
+    if (oauthError) {
+      setErrorMsg(oauthError);
+      setOauthProcessing(false);
+      setGoogleLoading(false);
+    }
+  }, [oauthError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,6 +90,22 @@ function AuthContent() {
       setGoogleLoading(false);
     }
   };
+
+  if (oauthProcessing && !errorMsg) {
+    return (
+      <div className="py-24 max-w-md mx-auto text-center font-mono px-4">
+        <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.6)]">
+          <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <h2 className="text-base font-black text-white uppercase tracking-tight mb-1">
+            Connecting Google Account...
+          </h2>
+          <p className="text-xs text-zinc-400 font-sans">
+            Setting up your loyalty card terminal. You will be redirected shortly.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 sm:py-12 max-w-4xl mx-auto font-mono">

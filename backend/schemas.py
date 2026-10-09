@@ -20,3 +20,10 @@ class StampClaim(BaseModel):
 
 class StampStatusUpdate(BaseModel):
     status: str = Field(pattern="^(?i)(approved|rejected)$")
+
+
+class GoogleAuthRequest(BaseModel):
+    code: Optional[str] = None
+    redirect_uri: Optional[str] = None
+    id_token: Optional[str] = None
+    credential: Optional[str] = None

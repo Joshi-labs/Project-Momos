@@ -2,6 +2,8 @@ import asyncio
 import hashlib
 import json
 import os
+import secrets
+from typing import Optional
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query, Request, Response
@@ -11,8 +13,9 @@ from sqlalchemy import desc
 
 from database import engine, Base, get_db, SessionLocal
 from models import User, Stamp
-from schemas import UserRegister, UserLogin, StampClaim, StampStatusUpdate
+from schemas import UserRegister, UserLogin, StampClaim, StampStatusUpdate, GoogleAuthRequest
 from auth import hash_password, verify_password, create_access_token, get_current_user, get_current_admin
+from google_auth import get_google_oauth_url, exchange_code_for_google_user, verify_direct_google_id_token
 import claims
 
 load_dotenv()
@@ -187,6 +190,75 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     return {
         "token": token,
         "user": {"id": user.id, "email": user.email, "name": user.name or "", "role": user.role},
+    }
+
+
+@router.get("/auth/google/url")
+def google_auth_url(redirect_uri: Optional[str] = Query(None)):
+    url = get_google_oauth_url(redirect_uri)
+    return {"url": url}
+
+
+@router.post("/auth/google")
+@router.post("/auth/google/callback")
+def google_auth(data: GoogleAuthRequest, db: Session = Depends(get_db)):
+    if data.code:
+        google_info = exchange_code_for_google_user(data.code, data.redirect_uri)
+    elif data.credential or data.id_token:
+        google_info = verify_direct_google_id_token(data.credential or data.id_token)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code or Google credential is required.",
+        )
+
+    email = (google_info.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account did not provide a valid email address.",
+        )
+
+    name = (google_info.get("name") or google_info.get("given_name") or email.split("@")[0]).strip()
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        # First time login with Google: automatically create account in DB
+        try:
+            user = User(
+                email=email,
+                password_hash=hash_password(secrets.token_urlsafe(32)),
+                name=name,
+                role="user",
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error registering user from Google OAuth: {str(e)}",
+            )
+    else:
+        # User already exists: update name if it was empty
+        if not user.name and name:
+            try:
+                user.name = name
+                db.commit()
+                db.refresh(user)
+            except Exception:
+                db.rollback()
+
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
+    return {
+        "token": token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name or "",
+            "role": user.role,
+        },
     }
 
 

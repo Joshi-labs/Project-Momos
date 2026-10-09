@@ -213,13 +213,54 @@ export const api = {
   },
 
   async loginWithGoogleRedirect() {
-    throw new Error(
-      'Google OAuth is disabled in local mode. Please use Email / Password to sign in.'
-    );
+    try {
+      const redirectUri = `${window.location.origin}/auth`;
+      const data = await request(`/auth/google/url?redirect_uri=${encodeURIComponent(redirectUri)}`, {
+        method: 'GET',
+      });
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Failed to obtain Google authentication URL from server.');
+      }
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
   async handleOAuthRedirect() {
-    return null;
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const error = params.get('error');
+
+    if (error) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      throw new Error(`Google authentication was cancelled or failed (${error}).`);
+    }
+
+    if (!code) return null;
+
+    // Clean URL query parameters immediately to avoid re-exchanging one-time code on reload
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    const redirectUri = `${window.location.origin}/auth`;
+    try {
+      const data = await request('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+      if (data && data.token && data.user) {
+        pb.authStore.save(data.token, data.user);
+        return { token: data.token, user: data.user };
+      }
+      throw new Error('Invalid authentication response from server.');
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
   },
 
   async loginWithGoogle() {

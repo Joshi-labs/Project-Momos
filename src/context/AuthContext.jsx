@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   // Initialize to null to match SSR output and prevent React hydration mismatch (#418)
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [oauthError, setOauthError] = useState(null);
 
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((token, record) => {
@@ -14,18 +15,21 @@ export const AuthProvider = ({ children }) => {
     }, true);
 
     const initSession = async () => {
-      // Step 1: Check if we're returning from a Google OAuth redirect (?code=...)
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('code')) {
-        try {
-          const result = await api.handleOAuthRedirect();
-          if (result && result.user) {
-            setUser(result.user);
-            setLoading(false);
-            return;
+      // Step 1: Check if we're returning from a Google OAuth redirect (?code=... or ?error=...)
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('code') || params.get('error')) {
+          try {
+            const result = await api.handleOAuthRedirect();
+            if (result && result.user) {
+              setUser(result.user);
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.error('OAuth redirect handling failed:', err);
+            setOauthError(err.message || 'Google sign-in failed.');
           }
-        } catch (err) {
-          console.error('OAuth redirect handling failed:', err);
         }
       }
 
@@ -95,6 +99,7 @@ export const AuthProvider = ({ children }) => {
     profile: user,
     isAdmin,
     loading,
+    oauthError,
     signIn,
     signUp,
     signInWithGoogle,
