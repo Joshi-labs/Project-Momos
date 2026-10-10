@@ -11,6 +11,7 @@ load_dotenv()
 
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from rate_limiter import RateLimitMiddleware
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 
@@ -129,6 +130,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Momo Loyalty API", lifespan=lifespan)
+app.add_middleware(RateLimitMiddleware)
 
 cors_env = os.getenv("CORS_ORIGINS")
 if not cors_env or not cors_env.strip():
