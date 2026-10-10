@@ -184,7 +184,7 @@ function UserDashboardContent() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
         <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION // PLEASE WAIT ]</span>
+        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION ]</span>
       </div>
     );
   }
@@ -249,7 +249,7 @@ function UserDashboardContent() {
             <div className="flex items-center gap-2 mb-2 font-mono">
               <PlusCircle className="w-5 h-5 text-amber-400" />
               <h2 className="text-sm font-black text-white uppercase tracking-wider">
-                Claim Purchase Stamp
+                Claim Stamps
               </h2>
             </div>
             <p className="text-xs text-zinc-400 mb-5 leading-relaxed">
@@ -303,7 +303,6 @@ function UserDashboardContent() {
                 title={isQuantityOpen ? 'Collapse quantity slider' : 'Expand quantity slider'}
               >
                 <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="text-amber-400 font-black">//</span>
                   <span>Quantity {isQuantityOpen ? ':' : '▼'}</span>
                 </span>
                 <span className="text-xs font-black bg-amber-400 text-black px-2.5 py-0.5 rounded border border-black shadow-[1px_1px_0px_0px_rgba(255,255,255,0.2)]">
@@ -375,7 +374,7 @@ function UserDashboardContent() {
           </div>
 
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-400 space-y-1">
-            <span className="text-amber-400 font-bold block uppercase">// COUNTER NOTICE:</span>
+            <span className="text-amber-400 font-bold block uppercase">COUNTER NOTICE:</span>
             <p className="text-[11px] leading-relaxed">
               Submitting claims creates a live pending stamp request on the chef's counter screen. Once verified, you will get the stamps automatically.
             </p>
