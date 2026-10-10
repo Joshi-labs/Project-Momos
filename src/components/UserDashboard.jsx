@@ -341,7 +341,6 @@ function UserDashboardContent() {
                       />
                       <div className="flex justify-between text-[9px] text-zinc-500 font-bold px-0.5 select-none">
                         <span>1</span>
-                        <span>5</span>
                         <span>10</span>
                       </div>
                     </div>
