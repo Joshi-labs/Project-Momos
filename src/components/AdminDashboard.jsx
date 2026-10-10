@@ -29,6 +29,33 @@ function AdminDashboardContent() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [toast, setToast] = useState(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  useEffect(() => {
+    // 1-second dynamic ticker to update pending stamp counters every second
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    const handleTimerVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setCurrentTime(Date.now());
+      }
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleTimerVisibility);
+    }
+
+    return () => {
+      clearInterval(timer);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleTimerVisibility);
+      }
+    };
+  }, []);
 
   const fetchStamps = useCallback(async () => {
     try {
@@ -142,6 +169,17 @@ function AdminDashboardContent() {
     const mins = Math.floor(diff / 60);
     if (mins < 60) return `${mins}m ago`;
     return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const formatPendingElapsedTime = (timestamp, now) => {
+    if (!timestamp) return '0s ago';
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '0s ago';
+    const diff = Math.max(0, Math.floor((now - d.getTime()) / 1000));
+    if (diff < 60) return `${diff}s ago`;
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    return `${mins}m ${secs < 10 ? '0' : ''}${secs}s ago`;
   };
 
   const approvedCount = historyStamps.filter((s) => s.status === 'approved').length;
@@ -352,9 +390,9 @@ function AdminDashboardContent() {
                           </span>
                           <div>
                             <h2 className="text-xs font-black uppercase text-white">{stamp.category} Momos</h2>
-                            <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                            <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
                               <Clock className="w-3 h-3 text-amber-400" />
-                              {formatRelativeTime(timestamp)}
+                              {formatPendingElapsedTime(timestamp, currentTime)}
                             </span>
                           </div>
                         </div>
