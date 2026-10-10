@@ -12,7 +12,10 @@ from models import User
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "jwt_secret_key_change_me_in_production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is not set. Application startup aborted.")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ACCESS_TOKEN_EXPIRE_DAYS", "120"))
 

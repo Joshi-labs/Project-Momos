@@ -6,6 +6,9 @@ import secrets
 from typing import Optional
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, joinedload
@@ -17,8 +20,6 @@ from schemas import UserRegister, UserLogin, StampClaim, StampStatusUpdate, Goog
 from auth import hash_password, verify_password, create_access_token, get_current_user, get_current_admin
 from google_auth import get_google_oauth_url, exchange_code_for_google_user, verify_direct_google_id_token
 import claims
-
-load_dotenv()
 
 
 def format_db_stamp(s: Stamp) -> dict:
@@ -77,26 +78,31 @@ def json_etag_response(request: Request, data: any) -> Response:
 
 
 def seed_users(db: Session):
+    admin_id = (os.getenv("ADMIN_ID") or os.getenv("ADMIN_EMAIL") or "").strip()
+    admin_pass = (os.getenv("ADMIN_PASS") or os.getenv("ADMIN_PASSWORD") or "").strip()
+
+    if not admin_id or not admin_pass:
+        print("[Seed Notice] ADMIN_ID (or ADMIN_EMAIL) and ADMIN_PASS (or ADMIN_PASSWORD) not set in environment. Skipping admin pre-seeding.")
+        return
+
     try:
-        if not db.query(User).filter(User.email == "admin@momo.com").first():
+        admin_email = admin_id.lower()
+        user = db.query(User).filter(User.email == admin_email).first()
+        if not user:
             db.add(
                 User(
-                    email="admin@momo.com",
-                    password_hash=hash_password("admin123"),
-                    name="Chef Admin",
+                    email=admin_email,
+                    password_hash=hash_password(admin_pass),
+                    name=os.getenv("ADMIN_NAME", "Chef Admin"),
                     role="admin",
                 )
             )
-        if not db.query(User).filter(User.email == "customer@momo.com").first():
-            db.add(
-                User(
-                    email="customer@momo.com",
-                    password_hash=hash_password("customer123"),
-                    name="Vishwash Joshi",
-                    role="user",
-                )
-            )
-        db.commit()
+            db.commit()
+            print(f"[Seed Notice] Admin user '{admin_email}' pre-seeded successfully.")
+        elif user.role != "admin":
+            user.role = "admin"
+            db.commit()
+            print(f"[Seed Notice] Updated existing user '{admin_email}' to admin role.")
     except Exception as e:
         db.rollback()
         print(f"[Seed Notice] Seeding skipped or already applied: {e}")
