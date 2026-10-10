@@ -294,14 +294,14 @@ export const api = {
   },
 
   // Stamps API
-  async claimStamp(category) {
+  async claimStamp(category, count = 1) {
     if (!pb.authStore.isValid || !pb.authStore.record) {
       throw new Error('You must be logged in to claim a stamp.');
     }
     try {
       const stamp = await request('/stamps/claim', {
         method: 'POST',
-        body: JSON.stringify({ category }),
+        body: JSON.stringify({ category, count: Number(count) || 1 }),
       });
       notifyStampSubscribers({ action: 'create', record: stamp });
       return stamp;

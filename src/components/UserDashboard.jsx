@@ -67,6 +67,7 @@ function UserDashboardContent() {
   }, []);
 
   const [stamps, setStamps] = useState([]);
+  const [stampCount, setStampCount] = useState(1);
   const [loadingStamps, setLoadingStamps] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -162,10 +163,10 @@ function UserDashboardContent() {
 
     setSubmitting(true);
     try {
-      await api.claimStamp(selectedCategory);
+      await api.claimStamp(selectedCategory, stampCount);
       setFeedback({
         type: 'success',
-        text: `Stamp request submitted for ${selectedCategory}! The truck chef will approve it in seconds.`,
+        text: `Stamp request submitted for ${stampCount}x ${selectedCategory}! The truck chef will approve it in seconds.`,
       });
       await fetchMyStamps();
     } catch (err) {
@@ -292,6 +293,57 @@ function UserDashboardContent() {
               })}
             </div>
 
+            {/* Stamp Quantity Slider (1 to 10) */}
+            <div className="mb-5 bg-zinc-900 border-2 border-zinc-800 rounded-lg p-3.5 font-mono space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-amber-400 font-black">//</span> Stamps Quantity:
+                </span>
+                <span className="text-xs font-black bg-amber-400 text-black px-2.5 py-0.5 rounded border border-black shadow-[1px_1px_0px_0px_rgba(255,255,255,0.2)]">
+                  {stampCount} {stampCount === 1 ? 'STAMP' : 'STAMPS'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStampCount((prev) => Math.max(1, prev - 1))}
+                  disabled={stampCount <= 1}
+                  className="w-7 h-7 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-white font-bold text-sm flex items-center justify-center border border-zinc-700 active:scale-95 transition-all shrink-0"
+                  title="Decrease stamps"
+                >
+                  -
+                </button>
+
+                <div className="flex-1 space-y-1">
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={stampCount}
+                    onChange={(e) => setStampCount(Number(e.target.value))}
+                    className="w-full accent-amber-400 cursor-pointer h-2 bg-zinc-800 rounded-lg appearance-none"
+                  />
+                  <div className="flex justify-between text-[9px] text-zinc-500 font-bold px-0.5 select-none">
+                    <span>1</span>
+                    <span>5</span>
+                    <span>10</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setStampCount((prev) => Math.min(10, prev + 1))}
+                  disabled={stampCount >= 10}
+                  className="w-7 h-7 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-white font-bold text-sm flex items-center justify-center border border-zinc-700 active:scale-95 transition-all shrink-0"
+                  title="Increase stamps"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={handleClaimStamp}
@@ -303,7 +355,9 @@ function UserDashboardContent() {
               ) : (
                 <>
                   <Flame className="w-4 h-4 fill-black" />
-                  <span>[ SUBMIT {selectedCategory.toUpperCase()} STAMP ]</span>
+                  <span>
+                    [ SUBMIT {stampCount > 1 ? `${stampCount} ` : ''}{selectedCategory.toUpperCase()} STAMP{stampCount > 1 ? 'S' : ''} ]
+                  </span>
                 </>
               )}
             </button>
@@ -450,7 +504,7 @@ function UserDashboardContent() {
                       <div>
                         {s.status === 'pending' && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
-                            PENDING
+                            PENDING {s.count && s.count > 1 ? `(${s.count})` : ''}
                           </span>
                         )}
                         {s.status === 'approved' && (

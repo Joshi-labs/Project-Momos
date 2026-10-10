@@ -273,7 +273,8 @@ def claim_stamp(data: StampClaim, user: User = Depends(get_current_user)):
     category = data.category.strip()
     if not category:
         raise HTTPException(400, "Category is required.")
-    return claims.create_claim(user, category)
+    count = data.count if data.count is not None else 1
+    return claims.create_claim(user, category, count)
 
 
 @router.get("/stamps/my")
@@ -335,18 +336,27 @@ def update_stamp_status(
     status_choice = data.status.strip().lower()
     if status_choice == "approved":
         try:
-            new_stamp = Stamp(user_id=claim["user_id"], category=claim["category"])
-            db.add(new_stamp)
+            raw_count = claim.get("count", 1) or 1
+            count = max(1, min(10, int(raw_count)))
+            created_stamps = []
+            for _ in range(count):
+                new_stamp = Stamp(user_id=claim["user_id"], category=claim["category"])
+                db.add(new_stamp)
+                created_stamps.append(new_stamp)
             db.commit()
-            db.refresh(new_stamp)
-            new_stamp.user = db.query(User).filter(User.id == claim["user_id"]).first()
-            return format_db_stamp(new_stamp)
+            for s in created_stamps:
+                db.refresh(s)
+            last_stamp = created_stamps[-1]
+            last_stamp.user = db.query(User).filter(User.id == claim["user_id"]).first()
+            result = format_db_stamp(last_stamp)
+            result["count"] = count
+            return result
         except Exception as e:
             db.rollback()
             claims.restore_claim(claim)
             raise HTTPException(500, f"Failed to persist approved stamp to PostgreSQL: {str(e)}")
     elif status_choice == "rejected":
-        return {"id": stamp_id, "status": "rejected"}
+        return {"id": stamp_id, "status": "rejected", "count": claim.get("count", 1) or 1}
     else:
         claims.restore_claim(claim)
         raise HTTPException(400, "Invalid status. Allowed values: 'approved' or 'rejected'.")

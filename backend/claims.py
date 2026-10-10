@@ -15,7 +15,7 @@ def _cleanup_expired():
         _claims.pop(k, None)
 
 
-def create_claim(user, category: str) -> dict:
+def create_claim(user, category: str, count: int = 1) -> dict:
     _cleanup_expired()
     # Remove any existing pending claim for this user to prevent duplicate spam
     for k in [k for k, v in _claims.items() if v["user_id"] == user.id]:
@@ -24,11 +24,17 @@ def create_claim(user, category: str) -> dict:
     claim_id = f"claim_{int(time.time() * 1000)}"
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    try:
+        safe_count = max(1, min(10, int(count)))
+    except (ValueError, TypeError):
+        safe_count = 1
+
     claim = {
         "id": claim_id,
         "user_id": user.id,
         "user": user.id,
         "category": category,
+        "count": safe_count,
         "status": "pending",
         "created": now_iso,
         "created_at": now_iso,

@@ -104,7 +104,7 @@ function AdminDashboardContent() {
     };
   }, [fetchStamps]);
 
-  const handleUpdateStatus = async (stampId, newStatus) => {
+  const handleUpdateStatus = async (stampId, newStatus, count = 1) => {
     setActionLoadingId(stampId);
     setToast(null);
 
@@ -113,7 +113,10 @@ function AdminDashboardContent() {
 
       setToast({
         type: 'success',
-        message: `STAMP #${stampId.slice(0, 8)} MARKED AS ${newStatus.toUpperCase()}!`,
+        message:
+          newStatus === 'approved'
+            ? `APPROVED +${count} ${count === 1 ? 'STAMP' : 'STAMPS'} FOR REQUEST #${stampId.slice(0, 8)}!`
+            : `STAMP REQUEST #${stampId.slice(0, 8)} REJECTED!`,
       });
 
       setPendingStamps((prev) => prev.filter((s) => s.id !== stampId));
@@ -329,6 +332,7 @@ function AdminDashboardContent() {
                 const timestamp = stamp.created || stamp.created_at;
                 const customerDisplay =
                   stamp.expand?.user?.name || stamp.expand?.user?.email || stamp.user;
+                const requestedCount = stamp.count || 1;
 
                 return (
                   <div
@@ -355,14 +359,29 @@ function AdminDashboardContent() {
                           </div>
                         </div>
 
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-950 text-amber-300 border border-amber-700">
-                          PENDING
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-950 text-amber-300 border border-amber-700">
+                            PENDING
+                          </span>
+                          {requestedCount > 1 && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-400 text-black border border-black shadow-[1px_1px_0px_0px_rgba(255,255,255,0.2)]">
+                              x{requestedCount} STAMPS
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="bg-zinc-900 rounded p-2 border border-zinc-800 mb-4 text-[11px] text-zinc-400 flex items-center gap-2 truncate">
-                        <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                        <span className="truncate">USER: {customerDisplay}</span>
+                      <div className="bg-zinc-900 rounded p-2.5 border border-zinc-800 mb-4 text-[11px] text-zinc-400 space-y-1.5">
+                        <div className="flex items-center gap-2 truncate">
+                          <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                          <span className="truncate">USER: {customerDisplay}</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80">
+                          <span className="text-[10px] uppercase font-bold text-zinc-400">Requesting:</span>
+                          <span className="text-xs font-black text-amber-400 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">
+                            {requestedCount} {requestedCount === 1 ? 'STAMP' : 'STAMPS'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -371,7 +390,7 @@ function AdminDashboardContent() {
                       <button
                         type="button"
                         disabled={isLoading}
-                        onClick={() => handleUpdateStatus(stamp.id, 'rejected')}
+                        onClick={() => handleUpdateStatus(stamp.id, 'rejected', requestedCount)}
                         className="py-2.5 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-red-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
                       >
                         <X className="w-4 h-4" />
@@ -381,7 +400,7 @@ function AdminDashboardContent() {
                       <button
                         type="button"
                         disabled={isLoading}
-                        onClick={() => handleUpdateStatus(stamp.id, 'approved')}
+                        onClick={() => handleUpdateStatus(stamp.id, 'approved', requestedCount)}
                         className="py-2.5 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
                       >
                         {isLoading ? (
@@ -389,7 +408,7 @@ function AdminDashboardContent() {
                         ) : (
                           <>
                             <Check className="w-4 h-4 stroke-[3]" />
-                            <span>Accept (+1)</span>
+                            <span>Accept (+{requestedCount})</span>
                           </>
                         )}
                       </button>
