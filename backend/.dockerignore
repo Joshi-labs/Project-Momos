@@ -18,3 +18,5 @@ htmlcov/
 Dockerfile
 .dockerignore
 
+tests/
+test/

@@ -30,6 +30,18 @@ def send_http_request(path: str, headers: dict = None) -> tuple[int, str, dict]:
         return e.code, e.read().decode("utf-8"), {k.lower(): v for k, v in e.headers.items()}
 
 
+@pytest.fixture(autouse=True, scope="module")
+def require_live_server():
+    """Skips live server tests gracefully if the remote server is unreachable."""
+    try:
+        req = urllib.request.Request(f"{LIVE_BASE_URL}/health", headers=DEFAULT_HEADERS)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status != 200:
+                pytest.skip(f"Live server at {LIVE_BASE_URL} returned status {resp.status}")
+    except Exception as e:
+        pytest.skip(f"Live server at {LIVE_BASE_URL} is not reachable from this environment: {e}")
+
+
 def test_live_health_endpoint_is_exempt():
     """
     Verifies that the /health endpoint is explicitly exempted from rate limiting

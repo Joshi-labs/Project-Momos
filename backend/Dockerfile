@@ -16,6 +16,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application source files
 COPY . .
 
+# Remove test folder and test caches from production build
+RUN rm -rf tests test .pytest_cache
+
 # Run as an unprivileged non-root user for security
 RUN addgroup --system --gid 10001 appgroup && \
     adduser --system --uid 10001 --gid 10001 --no-create-home appuser && \
