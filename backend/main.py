@@ -130,10 +130,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Momo Loyalty API", lifespan=lifespan)
 
-default_cors = (
-    "https://momoos.shop,https://www.momoos.shop"
-)
-origins = [o.strip() for o in os.getenv("CORS_ORIGINS", default_cors).split(",") if o.strip()]
+cors_env = os.getenv("CORS_ORIGINS")
+if not cors_env or not cors_env.strip():
+    raise RuntimeError("CORS_ORIGINS environment variable is not set. Application startup aborted.")
+
+origins = [o.strip() for o in cors_env.split(",") if o.strip()]
+if not origins:
+    raise RuntimeError("CORS_ORIGINS environment variable contains no valid origins.")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins if "*" not in origins else ["*"],
