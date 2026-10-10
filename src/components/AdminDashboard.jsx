@@ -189,7 +189,7 @@ function AdminDashboardContent() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-zinc-400 font-mono">
         <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION // PLEASE WAIT ]</span>
+        <span className="text-xs font-bold tracking-widest uppercase">[ LOADING SESSION ]</span>
       </div>
     );
   }
@@ -241,7 +241,7 @@ function AdminDashboardContent() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-lg bg-red-950 border-2 border-red-700 flex items-center justify-center text-red-400 shrink-0">
-              <ShieldAlert className="w-8 h-8" />
+              <ShieldAlert className="w-9 h-9" />
             </div>
             <div>
               <div className="flex items-center gap-2">
