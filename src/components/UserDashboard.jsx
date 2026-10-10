@@ -158,8 +158,14 @@ function UserDashboardContent() {
     });
   }, [stamps]);
 
+  const pendingClaim = useMemo(() => {
+    return stamps.find((s) => s.status === 'pending');
+  }, [stamps]);
+
+  const hasPendingClaim = Boolean(pendingClaim);
+
   const handleClaimStamp = async () => {
-    if (!user) return;
+    if (!user || submitting || hasPendingClaim) return;
     setFeedback(null);
 
     setSubmitting(true);
@@ -357,11 +363,22 @@ function UserDashboardContent() {
             <button
               type="button"
               onClick={handleClaimStamp}
-              disabled={submitting}
-              className="w-full py-3.5 px-4 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black font-mono text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              disabled={submitting || hasPendingClaim}
+              className={`w-full py-3.5 px-4 rounded-lg font-black font-mono text-xs uppercase tracking-wider border-2 transition-all flex items-center justify-center gap-2 ${
+                hasPendingClaim
+                  ? 'bg-zinc-900 border-zinc-700 text-amber-400/80 cursor-not-allowed opacity-80'
+                  : 'bg-amber-400 hover:bg-amber-300 text-black border-black shadow-[3px_3px_0px_0px_rgba(255,255,255,0.2)] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-50'
+              }`}
             >
               {submitting ? (
                 <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : hasPendingClaim ? (
+                <>
+                  <Clock className="w-4 h-4 text-amber-400 animate-spin" />
+                  <span>
+                    [ REQUEST PENDING // AWAITING CHEF APPROVAL ]
+                  </span>
+                </>
               ) : (
                 <>
                   <Flame className="w-4 h-4 fill-black" />
@@ -374,10 +391,16 @@ function UserDashboardContent() {
           </div>
 
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-400 space-y-1">
-            <span className="text-amber-400 font-bold block uppercase">COUNTER NOTICE:</span>
-            <p className="text-[11px] leading-relaxed">
-              Submitting claims creates a live pending stamp request on the chef's counter screen. Once verified, you will get the stamps automatically.
-            </p>
+            <span className="text-amber-400 font-bold block uppercase">// COUNTER NOTICE:</span>
+            {hasPendingClaim ? (
+              <p className="text-[11px] leading-relaxed text-amber-300">
+                You have a pending request for {pendingClaim.count || 1}x {pendingClaim.category} momos awaiting approval on the chef's counter screen.
+              </p>
+            ) : (
+              <p className="text-[11px] leading-relaxed">
+                Submitting claims creates a live pending stamp request on the chef's counter screen. Once verified, you will get the stamps automatically.
+              </p>
+            )}
           </div>
         </div>
 
