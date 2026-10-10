@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { Flame, UtensilsCrossed, Award, LogOut, LogIn, Menu, X } from 'lucide-react';
+import { Flame, UtensilsCrossed, Award, LogOut, LogIn, Menu, X, ShieldAlert } from 'lucide-react';
 
 function NavbarContent({ currentPath = '' }) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isUserAdmin = Boolean(isAdmin || user?.role === 'admin' || profile?.role === 'admin');
 
   const handleLogout = async () => {
     try {
@@ -77,6 +79,13 @@ function NavbarContent({ currentPath = '' }) {
             <Award className="w-3.5 h-3.5" />
             Stamps
           </a>
+
+          {isUserAdmin && (
+            <a href="/admin" className={getNavLinkClass('/admin')}>
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Admin
+            </a>
+          )}
         </nav>
 
         {/* Desktop User / Auth controls */}
@@ -132,7 +141,7 @@ function NavbarContent({ currentPath = '' }) {
           <nav className="flex flex-col gap-2">
             <a href="/" className={getMobileNavLinkClass('/')} onClick={() => setMobileMenuOpen(false)}>
               <span className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-amber-400" />
+                <Flame className={`w-4 h-4 ${getIsActive('/') ? 'text-black' : 'text-amber-400'}`} />
                 Home Truck
               </span>
               <span>→</span>
@@ -140,7 +149,7 @@ function NavbarContent({ currentPath = '' }) {
 
             <a href="/menu" className={getMobileNavLinkClass('/menu')} onClick={() => setMobileMenuOpen(false)}>
               <span className="flex items-center gap-2">
-                <UtensilsCrossed className="w-4 h-4 text-orange-400" />
+                <UtensilsCrossed className={`w-4 h-4 ${getIsActive('/menu') ? 'text-black' : 'text-orange-400'}`} />
                 Food Truck Menu
               </span>
               <span>→</span>
@@ -148,11 +157,21 @@ function NavbarContent({ currentPath = '' }) {
 
             <a href="/user" className={getMobileNavLinkClass('/user')} onClick={() => setMobileMenuOpen(false)}>
               <span className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
+                <Award className={`w-4 h-4 ${getIsActive('/user') ? 'text-black' : 'text-amber-400'}`} />
                 My Stamp Card
               </span>
               <span>→</span>
             </a>
+
+            {isUserAdmin && (
+              <a href="/admin" className={getMobileNavLinkClass('/admin')} onClick={() => setMobileMenuOpen(false)}>
+                <span className="flex items-center gap-2">
+                  <ShieldAlert className={`w-4 h-4 ${getIsActive('/admin') ? 'text-black' : 'text-amber-400'}`} />
+                  Chef Admin
+                </span>
+                <span>→</span>
+              </a>
+            )}
 
             <div className="pt-2 mt-2 border-t border-zinc-800">
               {user ? (
