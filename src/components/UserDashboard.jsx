@@ -391,7 +391,7 @@ function UserDashboardContent() {
           </div>
 
           <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-400 space-y-1">
-            <span className="text-amber-400 font-bold block uppercase">// COUNTER NOTICE:</span>
+            <span className="text-amber-400 font-bold block uppercase">COUNTER NOTICE:</span>
             {hasPendingClaim ? (
               <p className="text-[11px] leading-relaxed text-amber-300">
                 You have a pending request for {pendingClaim.count || 1}x {pendingClaim.category} momos awaiting approval on the chef's counter screen.
@@ -505,7 +505,7 @@ function UserDashboardContent() {
 
             {sortedStamps.length === 0 ? (
               <div className="text-center py-6 text-xs text-zinc-500 font-mono">
-                [ NO STAMPS LOGGED YET // ORDER AT COUNTER TO START ]
+                [ NO STAMPS LOGGED YET ]
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
@@ -572,9 +572,6 @@ function UserDashboardContent() {
             </button>
 
             <div className="text-center mb-6">
-              <span className="text-amber-400 text-xs font-black uppercase tracking-wider block mb-1">
-                // COMPLIMENTARY VOUCHER UNLOCKED
-              </span>
               <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
                 Free {redeemModal.category} Plate
               </h3>
