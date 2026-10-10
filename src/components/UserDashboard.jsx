@@ -376,7 +376,7 @@ function UserDashboardContent() {
                 <>
                   <Clock className="w-4 h-4 text-amber-400 animate-spin" />
                   <span>
-                    [ REQUEST PENDING // AWAITING CHEF APPROVAL ]
+                    [ REQUEST PENDING ]
                   </span>
                 </>
               ) : (
