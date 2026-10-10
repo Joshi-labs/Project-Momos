@@ -241,7 +241,7 @@ function AdminDashboardContent() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-lg bg-red-950 border-2 border-red-700 flex items-center justify-center text-red-400 shrink-0">
-              <ShieldAlert className="w-9 h-9" />
+              <ShieldAlert className="w-10 h-10" />
             </div>
             <div>
               <div className="flex items-center gap-2">
