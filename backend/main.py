@@ -13,11 +13,18 @@ from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Query, R
 from fastapi.middleware.cors import CORSMiddleware
 from rate_limiter import RateLimitMiddleware
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 
 from database import engine, Base, get_db, SessionLocal
 from models import User, Stamp
-from schemas import UserRegister, UserLogin, StampClaim, StampStatusUpdate, GoogleAuthRequest
+from schemas import (
+    UserRegister,
+    UserLogin,
+    StampClaim,
+    StampStatusUpdate,
+    GoogleAuthRequest,
+    FreePlateClaim,
+)
 from auth import hash_password, verify_password, create_access_token, get_current_user, get_current_admin
 from google_auth import get_google_oauth_url, exchange_code_for_google_user, verify_direct_google_id_token
 import claims
@@ -30,6 +37,7 @@ def format_db_stamp(s: Stamp) -> dict:
         "user": s.user_id,
         "category": s.category,
         "status": "approved",
+        "claimed": bool(getattr(s, "claimed", False)),
         "created": iso,
         "created_at": iso,
         "expand": {
@@ -43,6 +51,7 @@ def format_db_stamp(s: Stamp) -> dict:
         if s.user
         else None,
     }
+
 
 
 def json_etag_response(request: Request, data: any) -> Response:
@@ -116,6 +125,13 @@ async def lifespan(app: FastAPI):
     for attempt in range(1, max_retries + 1):
         try:
             Base.metadata.create_all(bind=engine)
+            # Ensure 'claimed' column exists on PostgreSQL if stamps table was created previously
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE stamps ADD COLUMN IF NOT EXISTS claimed BOOLEAN DEFAULT FALSE NOT NULL;"))
+                    conn.commit()
+            except Exception:
+                pass
             with SessionLocal() as db:
                 seed_users(db)
             print("[PostgreSQL] Connected and schema initialized successfully.")
@@ -373,8 +389,133 @@ def update_stamp_status(
         raise HTTPException(400, "Invalid status. Allowed values: 'approved' or 'rejected'.")
 
 
+# --- FREE PLATE LOYALTY REDEMPTION ---
+@router.post("/intent_to_get_free_plate")
+def intent_to_get_free_plate(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    User submits intent to claim a free plate.
+    Checks unclaimed stamps and verifies user has >= 5 unclaimed stamps
+    in at least one category. Caches the request for 2 minutes.
+    """
+    unclaimed_stamps = (
+        db.query(Stamp)
+        .filter(Stamp.user_id == user.id, Stamp.claimed == False)
+        .all()
+    )
+
+    category_counts = {"Steam Veg": 0, "Afghani": 0, "Fried": 0}
+    for s in unclaimed_stamps:
+        category_counts[s.category] = category_counts.get(s.category, 0) + 1
+
+    eligible_categories = [cat for cat, count in category_counts.items() if count >= 5]
+    if not eligible_categories:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You need at least 5 unclaimed stamps in at least one category to request a free plate.",
+        )
+
+    req = claims.create_free_plate_request(user, category_counts)
+    return {
+        "success": True,
+        "message": "Free plate request submitted. Valid for 2 minutes.",
+        "request": req,
+    }
+
+
+@router.get("/intent_to_get_free_plate/status")
+def get_free_plate_intent_status(
+    user: User = Depends(get_current_user),
+):
+    """Check current user's active free plate request in cache."""
+    active_req = claims.get_user_free_plate_request(user.id)
+    return {"active": bool(active_req), "request": active_req}
+
+
+@router.get("/admin/free_plate_requests")
+@router.get("/free_plate_requests")
+def get_free_plate_requests(
+    request: Request,
+    _: User = Depends(get_current_admin),
+):
+    """Admin endpoint to fetch active free plate requests from the 2-minute cache."""
+    return json_etag_response(request, claims.get_active_free_plate_requests())
+
+
+@router.delete("/admin/free_plate_requests/{request_id}")
+def dismiss_free_plate_request(
+    request_id: str,
+    _: User = Depends(get_current_admin),
+):
+    """Admin endpoint to dismiss a free plate request."""
+    popped = claims.pop_free_plate_request(request_id)
+    return {"success": True, "id": request_id, "found": bool(popped)}
+
+
+@router.post("/get_free_plate")
+@router.post("/admin/get_free_plate")
+def get_free_plate(
+    data: FreePlateClaim,
+    _: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Admin endpoint to grant a free plate.
+    Marks the last 5 unclaimed stamps in the chosen category as claimed for the user.
+    """
+    category = data.category.strip()
+    if not category:
+        raise HTTPException(400, "Category is required.")
+
+    target_user = db.query(User).filter(User.id == data.user_id).first()
+    if not target_user:
+        raise HTTPException(404, "Target user not found.")
+
+    # Find the last 5 unclaimed stamps for this user in the specified category
+    stamps_to_claim = (
+        db.query(Stamp)
+        .filter(
+            Stamp.user_id == data.user_id,
+            Stamp.category == category,
+            Stamp.claimed == False,
+        )
+        .order_by(desc(Stamp.created_at), desc(Stamp.id))
+        .limit(5)
+        .all()
+    )
+
+    if len(stamps_to_claim) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail=f"User only has {len(stamps_to_claim)} unclaimed stamp(s) for {category}. 5 required.",
+        )
+
+    try:
+        for s in stamps_to_claim:
+            s.claimed = True
+        db.commit()
+
+        # Evict request from cache
+        claims.remove_user_free_plate_request(data.user_id)
+
+        return {
+            "success": True,
+            "message": f"Successfully claimed 5 {category} stamps for free plate.",
+            "user_id": data.user_id,
+            "category": category,
+            "claimed_count": 5,
+            "claimed_stamp_ids": [s.id for s in stamps_to_claim],
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(500, f"Failed to mark stamps as claimed in database: {str(e)}")
+
+
 app.include_router(router)
 app.include_router(router, prefix="/api")
+
 
 if __name__ == "__main__":
     import uvicorn

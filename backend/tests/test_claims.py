@@ -8,8 +8,11 @@ import claims
 def clean_claims_memory():
     """Ensure in-memory claims store is clean before and after each test."""
     claims._claims.clear()
+    claims._free_plate_requests.clear()
     yield
     claims._claims.clear()
+    claims._free_plate_requests.clear()
+
 
 
 def test_create_and_get_claim():
@@ -84,4 +87,56 @@ def test_claim_ttl_expiration():
     # Calling active claims should trigger cleanup
     assert len(claims.get_active_claims()) == 0
     assert len(claims.get_user_pending(5)) == 0
+
+
+def test_free_plate_request_create_and_get():
+    user = User(id=10, email="freeplate@momo.com", name="FP User", role="user")
+    req = claims.create_free_plate_request(user, {"Steam Veg": 6, "Afghani": 2, "Fried": 0})
+
+    assert req["user_id"] == 10
+    assert req["category_counts"]["Steam Veg"] == 6
+    assert req["status"] == "pending"
+    assert "expires_at" in req
+
+    active = claims.get_active_free_plate_requests()
+    assert len(active) == 1
+    assert active[0]["id"] == req["id"]
+
+    user_req = claims.get_user_free_plate_request(10)
+    assert user_req is not None
+    assert user_req["id"] == req["id"]
+
+
+def test_free_plate_request_deduplication():
+    user = User(id=11, email="fpdedup@momo.com", name="FP Dedup", role="user")
+    r1 = claims.create_free_plate_request(user, {"Steam Veg": 5})
+    assert len(claims.get_active_free_plate_requests()) == 1
+
+    # Second request replaces old one
+    r2 = claims.create_free_plate_request(user, {"Steam Veg": 7})
+    active = claims.get_active_free_plate_requests()
+    assert len(active) == 1
+    assert active[0]["id"] == r2["id"]
+    assert active[0]["category_counts"]["Steam Veg"] == 7
+
+
+def test_free_plate_request_ttl_expiration():
+    user = User(id=12, email="fpttl@momo.com", name="FP TTL", role="user")
+    req = claims.create_free_plate_request(user, {"Steam Veg": 5})
+
+    # Backdate expires_at
+    claims._free_plate_requests[req["id"]]["expires_at"] = time.time() - 5
+
+    assert len(claims.get_active_free_plate_requests()) == 0
+    assert claims.get_user_free_plate_request(12) is None
+
+
+def test_free_plate_request_remove():
+    user = User(id=13, email="fpremove@momo.com", name="FP Remove", role="user")
+    claims.create_free_plate_request(user, {"Steam Veg": 5})
+    assert len(claims.get_active_free_plate_requests()) == 1
+
+    claims.remove_user_free_plate_request(13)
+    assert len(claims.get_active_free_plate_requests()) == 0
+
 

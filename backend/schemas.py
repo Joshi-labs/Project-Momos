@@ -28,3 +28,9 @@ class GoogleAuthRequest(BaseModel):
     redirect_uri: Optional[str] = None
     id_token: Optional[str] = None
     credential: Optional[str] = None
+
+
+class FreePlateClaim(BaseModel):
+    user_id: int
+    category: str = Field(min_length=1, max_length=100)
+

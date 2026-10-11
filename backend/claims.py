@@ -72,3 +72,70 @@ def restore_claim(claim: dict):
     if claim and "id" in claim:
         _claims[claim["id"]] = claim
 
+
+# ==========================================
+# FREE PLATE REQUESTS CACHE (2-MIN TTL)
+# ==========================================
+FREE_PLATE_TTL_SECONDS = 120  # 2 minutes in memory
+_free_plate_requests: Dict[str, dict] = {}
+
+
+def _cleanup_expired_free_plate():
+    now = time.time()
+    expired_keys = [k for k, v in _free_plate_requests.items() if v.get("expires_at", 0) < now]
+    for k in expired_keys:
+        _free_plate_requests.pop(k, None)
+
+
+def create_free_plate_request(user, category_counts: dict) -> dict:
+    _cleanup_expired_free_plate()
+    # Remove any existing pending request for this user to prevent duplicate spam
+    for k in [k for k, v in _free_plate_requests.items() if v.get("user_id") == user.id]:
+        _free_plate_requests.pop(k, None)
+
+    req_id = f"free_{int(time.time() * 1000)}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    now_ts = time.time()
+
+    req = {
+        "id": req_id,
+        "user_id": user.id,
+        "category_counts": category_counts,
+        "status": "pending",
+        "created_at": now_iso,
+        "expires_at": now_ts + FREE_PLATE_TTL_SECONDS,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name or "",
+            "role": user.role,
+        },
+    }
+    _free_plate_requests[req_id] = req
+    return req
+
+
+def get_active_free_plate_requests() -> List[dict]:
+    _cleanup_expired_free_plate()
+    return list(_free_plate_requests.values())
+
+
+def get_user_free_plate_request(user_id: int) -> Optional[dict]:
+    _cleanup_expired_free_plate()
+    for v in _free_plate_requests.values():
+        if v.get("user_id") == user_id:
+            return v
+    return None
+
+
+def pop_free_plate_request(req_id: str) -> Optional[dict]:
+    _cleanup_expired_free_plate()
+    return _free_plate_requests.pop(str(req_id), None)
+
+
+def remove_user_free_plate_request(user_id: int):
+    _cleanup_expired_free_plate()
+    for k in [k for k, v in _free_plate_requests.items() if v.get("user_id") == user_id]:
+        _free_plate_requests.pop(k, None)
+
+

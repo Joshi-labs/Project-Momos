@@ -161,7 +161,12 @@ async function request(endpoint, options = {}) {
   } else {
     // If mutating records, clear stamp cache so next GET fetches fresh state
     for (const key of etagCache.keys()) {
-      if (key.includes('/stamps') || key.includes('/admin/stamps')) {
+      if (
+        key.includes('/stamps') ||
+        key.includes('/admin/stamps') ||
+        key.includes('/free_plate') ||
+        key.includes('/intent_to_get_free_plate')
+      ) {
         etagCache.delete(key);
       }
     }
@@ -351,6 +356,68 @@ export const api = {
     }
   },
 
+  // Free Plate Loyalty API
+  async intentToGetFreePlate() {
+    if (!pb.authStore.isValid || !pb.authStore.record) {
+      throw new Error('You must be logged in to claim a free plate.');
+    }
+    try {
+      const data = await request('/intent_to_get_free_plate', {
+        method: 'POST',
+      });
+      notifyStampSubscribers({ action: 'free_plate_intent', record: data });
+      return data;
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
+  },
+
+  async getFreePlateIntentStatus() {
+    if (!pb.authStore.isValid || !pb.authStore.record) {
+      return { active: false, request: null };
+    }
+    try {
+      return await request('/intent_to_get_free_plate/status', {
+        method: 'GET',
+      });
+    } catch (err) {
+      return { active: false, request: null };
+    }
+  },
+
+  async getAdminFreePlateRequests() {
+    try {
+      return await request('/admin/free_plate_requests', {
+        method: 'GET',
+      });
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
+  },
+
+  async getFreePlate(userId, category) {
+    try {
+      const data = await request('/get_free_plate', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: Number(userId), category }),
+      });
+      notifyStampSubscribers({ action: 'free_plate_claimed', record: data });
+      return data;
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
+  },
+
+  async dismissFreePlateRequest(requestId) {
+    try {
+      return await request(`/admin/free_plate_requests/${requestId}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      throw new Error(formatPbError(err));
+    }
+  },
+
   // Real-time notification callbacks
   subscribeStamps(callback) {
     stampSubscribers.add(callback);
@@ -386,3 +453,4 @@ export const api = {
     return this.unsubscribeStamps();
   },
 };
+

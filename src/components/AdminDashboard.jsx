@@ -12,6 +12,7 @@ import {
   X,
   Loader2,
   ArrowLeft,
+  Gift,
 } from 'lucide-react';
 
 function AdminDashboardContent() {
@@ -24,12 +25,17 @@ function AdminDashboardContent() {
   }, [authLoading, user]);
   const [pendingStamps, setPendingStamps] = useState([]);
   const [historyStamps, setHistoryStamps] = useState([]);
+  const [freePlateRequests, setFreePlateRequests] = useState([]);
+  const [selectedRequestForRedeem, setSelectedRequestForRedeem] = useState(null);
+  const [chosenCategory, setChosenCategory] = useState('Steam Veg');
+  const [redeeming, setRedeeming] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [toast, setToast] = useState(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+
 
   useEffect(() => {
     // 1-second dynamic ticker to update pending stamp counters every second
@@ -59,10 +65,11 @@ function AdminDashboardContent() {
 
   const fetchStamps = useCallback(async () => {
     try {
-      // Concurrently fetch pending queue and processed history
-      const [pending, history] = await Promise.all([
+      // Concurrently fetch pending queue, processed history, and free plate requests
+      const [pending, history, plateReqs] = await Promise.all([
         api.getAdminPendingStamps(),
         api.getAdminHistoryStamps(30),
+        api.getAdminFreePlateRequests(),
       ]);
 
       let hasChanges = false;
@@ -78,6 +85,14 @@ function AdminDashboardContent() {
         if (prev !== history) {
           hasChanges = true;
           return history || [];
+        }
+        return prev;
+      });
+
+      setFreePlateRequests((prev) => {
+        if (prev !== plateReqs) {
+          hasChanges = true;
+          return plateReqs || [];
         }
         return prev;
       });
@@ -158,6 +173,55 @@ function AdminDashboardContent() {
       setActionLoadingId(null);
     }
   };
+
+  const handleOpenRedeemModal = (req) => {
+    setSelectedRequestForRedeem(req);
+    const counts = req.category_counts || {};
+    const eligible = Object.keys(counts).find((k) => counts[k] >= 5);
+    setChosenCategory(eligible || 'Steam Veg');
+  };
+
+  const handleConfirmFreePlate = async () => {
+    if (!selectedRequestForRedeem || !chosenCategory || redeeming) return;
+    setRedeeming(true);
+    setToast(null);
+
+    try {
+      await api.getFreePlate(selectedRequestForRedeem.user_id, chosenCategory);
+      setToast({
+        type: 'success',
+        message: `FREE PLATE GRANTED: Deducted 5 ${chosenCategory} stamps for ${
+          selectedRequestForRedeem.user?.email || selectedRequestForRedeem.user_id
+        }!`,
+      });
+      const closedId = selectedRequestForRedeem.id;
+      setSelectedRequestForRedeem(null);
+      setFreePlateRequests((prev) => prev.filter((r) => r.id !== closedId));
+      await fetchStamps();
+    } catch (err) {
+      console.error('Free plate error:', err);
+      setToast({
+        type: 'error',
+        message: err.message || 'Failed to claim free plate.',
+      });
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  const handleDismissRequest = async (requestId) => {
+    try {
+      await api.dismissFreePlateRequest(requestId);
+      setFreePlateRequests((prev) => prev.filter((r) => r.id !== requestId));
+      setToast({
+        type: 'success',
+        message: `Dismissed free plate request #${requestId.slice(0, 8)}.`,
+      });
+    } catch (err) {
+      console.error('Failed to dismiss request:', err);
+    }
+  };
+
 
   const formatRelativeTime = (timestamp) => {
     if (!timestamp) return 'Just now';
@@ -278,10 +342,15 @@ function AdminDashboardContent() {
         </div>
 
         {/* Boxy Metrics */}
-        <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-zinc-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-zinc-800">
           <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
             <span className="text-[10px] text-zinc-400 block uppercase font-bold">Pending Queue</span>
             <span className="text-xl font-black text-amber-400">{pendingStamps.length}</span>
+          </div>
+
+          <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
+            <span className="text-[10px] text-zinc-400 block uppercase font-bold">Free Plate Reqs</span>
+            <span className="text-xl font-black text-amber-400">{freePlateRequests.length}</span>
           </div>
 
           <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
@@ -316,7 +385,7 @@ function AdminDashboardContent() {
 
       {/* Boxy Tabs */}
       <div className="flex items-center justify-between border-b-2 border-zinc-800 pb-2 font-mono">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setActiveTab('pending')}
@@ -327,6 +396,18 @@ function AdminDashboardContent() {
             }`}
           >
             <span>Pending ({pendingStamps.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('requests')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border ${
+              activeTab === 'requests'
+                ? 'bg-amber-400 text-black border-amber-400'
+                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+            }`}
+          >
+            <span>Request ({freePlateRequests.length})</span>
           </button>
 
           <button
@@ -456,7 +537,140 @@ function AdminDashboardContent() {
         </div>
       )}
 
-      {/* TAB 2: PROCESSED HISTORY */}
+      {/* TAB 2: REQUESTS (FREE PLATE CLAIMS) */}
+      {activeTab === 'requests' && (
+        <div>
+          {freePlateRequests.length === 0 ? (
+            <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-10 text-center max-w-md mx-auto font-mono">
+              <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-700 mx-auto flex items-center justify-center text-amber-400 mb-3">
+                <Gift className="w-6 h-6 stroke-[2]" />
+              </div>
+              <h3 className="text-sm font-bold text-white uppercase mb-1">Queue Clear</h3>
+              <p className="text-xs text-zinc-400">
+                No active free plate requests. Customer claims with 5+ stamps will appear here in real-time (2-min cache).
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 font-mono">
+              {freePlateRequests.map((req) => {
+                const counts = req.category_counts || {};
+                const steamCount = counts['Steam Veg'] || 0;
+                const afgCount = counts['Afghani'] || 0;
+                const friedCount = counts['Fried'] || 0;
+                const customerDisplay = req.user?.name || req.user?.email || `User #${req.user_id}`;
+                const timestamp = req.created_at;
+
+                return (
+                  <div
+                    key={req.id}
+                    className="bg-[#12141a] border-2 border-amber-400/80 hover:border-amber-400 rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] flex flex-col justify-between transition-all"
+                  >
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3 border-b-2 border-dashed border-zinc-800 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🎁</span>
+                          <div>
+                            <h2 className="text-xs font-black uppercase text-white">Free Plate Request</h2>
+                            <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              {formatPendingElapsedTime(timestamp, currentTime)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-400 text-black border border-black shadow-[1px_1px_0px_0px_rgba(255,255,255,0.2)]">
+                          5 STAMPS CLAIM
+                        </span>
+                      </div>
+
+                      {/* Customer Info */}
+                      <div className="bg-zinc-900 rounded p-2.5 border border-zinc-800 mb-3 text-[11px] text-zinc-400 space-y-1">
+                        <div className="flex items-center gap-2 truncate">
+                          <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                          <span className="truncate font-bold text-zinc-200">
+                            {customerDisplay}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-zinc-500 truncate">
+                          {req.user?.email}
+                        </div>
+                      </div>
+
+                      {/* Unclaimed stamp count per category with emoji */}
+                      <div className="space-y-1.5 mb-4">
+                        <span className="text-[10px] uppercase font-bold text-zinc-400 block">
+                          Unclaimed Stamp Breakdown:
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                          <div
+                            className={`p-2 rounded border ${
+                              steamCount >= 5
+                                ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400'
+                            }`}
+                          >
+                            <span className="text-base block">🥟</span>
+                            <span className="text-[9px] uppercase block truncate">Steam</span>
+                            <span className="text-xs font-black text-white">{steamCount}</span>
+                          </div>
+
+                          <div
+                            className={`p-2 rounded border ${
+                              afgCount >= 5
+                                ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400'
+                            }`}
+                          >
+                            <span className="text-base block">🥘</span>
+                            <span className="text-[9px] uppercase block truncate">Afghani</span>
+                            <span className="text-xs font-black text-white">{afgCount}</span>
+                          </div>
+
+                          <div
+                            className={`p-2 rounded border ${
+                              friedCount >= 5
+                                ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400'
+                            }`}
+                          >
+                            <span className="text-base block">🔥</span>
+                            <span className="text-[9px] uppercase block truncate">Fried</span>
+                            <span className="text-xs font-black text-white">{friedCount}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => handleDismissRequest(req.id)}
+                        className="py-2.5 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-zinc-400 hover:text-red-400 font-bold text-xs uppercase flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Dismiss</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenRedeemModal(req)}
+                        className="py-2.5 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
+                      >
+                        <Check className="w-4 h-4 stroke-[3]" />
+                        <span>Accept</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: PROCESSED HISTORY */}
       {activeTab === 'history' && (
         <div className="font-mono">
           {historyStamps.length === 0 ? (
@@ -498,6 +712,139 @@ function AdminDashboardContent() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL: SELECT CATEGORY FOR FREE PLATE */}
+      {selectedRequestForRedeem && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-mono">
+          <div className="bg-[#12141a] border-2 border-amber-400 rounded-xl p-6 sm:p-7 max-w-md w-full relative shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)]">
+            <button
+              type="button"
+              onClick={() => setSelectedRequestForRedeem(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="text-center mb-5">
+              <div className="w-12 h-12 rounded-lg bg-amber-400 text-black mx-auto flex items-center justify-center font-black text-2xl mb-2 border-2 border-black">
+                🎁
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-white uppercase">
+                Redeem Free Plate
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                Select which momo category has to be claimed for free (-5 stamps):
+              </p>
+            </div>
+
+            {/* Customer info card */}
+            <div className="bg-zinc-900 p-3 rounded-lg border border-zinc-800 mb-4 text-xs space-y-1">
+              <div className="flex justify-between text-zinc-400">
+                <span>Customer:</span>
+                <span className="font-bold text-white">
+                  {selectedRequestForRedeem.user?.name || selectedRequestForRedeem.user?.email}
+                </span>
+              </div>
+              <div className="flex justify-between text-zinc-500 text-[11px]">
+                <span>Email:</span>
+                <span className="truncate max-w-[200px]">{selectedRequestForRedeem.user?.email}</span>
+              </div>
+            </div>
+
+            {/* Category selection */}
+            <div className="space-y-2 mb-6">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                Select Category (5 Stamps Required):
+              </span>
+
+              {[
+                { name: 'Steam Veg', icon: '🥟' },
+                { name: 'Afghani', icon: '🥘' },
+                { name: 'Fried', icon: '🔥' },
+              ].map((cat) => {
+                const count = selectedRequestForRedeem.category_counts?.[cat.name] || 0;
+                const isEligible = count >= 5;
+                const isSelected = chosenCategory === cat.name;
+
+                return (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    disabled={!isEligible}
+                    onClick={() => setChosenCategory(cat.name)}
+                    className={`w-full p-3 rounded-lg border-2 flex items-center justify-between text-left transition-all ${
+                      isSelected
+                        ? 'bg-amber-400 text-black border-black font-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]'
+                        : isEligible
+                        ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:border-zinc-500'
+                        : 'bg-zinc-950/60 border-zinc-900 text-zinc-600 opacity-60 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">{cat.icon}</span>
+                      <div>
+                        <span className="text-xs font-bold uppercase block">{cat.name} Momos</span>
+                        <span className="text-[10px] block opacity-80">
+                          {count} Unclaimed {count === 1 ? 'Stamp' : 'Stamps'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      {isEligible ? (
+                        isSelected ? (
+                          <span className="text-[11px] font-black bg-black text-amber-400 px-2 py-0.5 rounded">
+                            SELECTED
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold bg-zinc-800 text-amber-400 px-2 py-0.5 rounded border border-zinc-700">
+                            ELIGIBLE
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-[10px] text-zinc-500">
+                          Needs {5 - count} more
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedRequestForRedeem(null)}
+                className="py-3 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-bold text-xs uppercase border border-zinc-700"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  redeeming ||
+                  !chosenCategory ||
+                  (selectedRequestForRedeem.category_counts?.[chosenCategory] || 0) < 5
+                }
+                onClick={handleConfirmFreePlate}
+                className="py-3 px-4 rounded-lg bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider border-2 border-black flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
+              >
+                {redeeming ? (
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 stroke-[3]" />
+                    <span>Approve (-5)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

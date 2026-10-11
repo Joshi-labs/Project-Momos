@@ -72,7 +72,8 @@ function UserDashboardContent() {
   const [loadingStamps, setLoadingStamps] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
-  const [redeemModal, setRedeemModal] = useState(null);
+  const [freePlateModal, setFreePlateModal] = useState(null);
+  const [modalTimeRemaining, setModalTimeRemaining] = useState(120);
 
   const fetchMyStamps = useCallback(async () => {
     if (!user) {
@@ -132,14 +133,33 @@ function UserDashboardContent() {
     };
   }, [fetchMyStamps, user?.id]);
 
+  // Modal expiration countdown timer
+  useEffect(() => {
+    if (!freePlateModal?.open || !freePlateModal?.request?.expires_at) return;
+
+    const tick = () => {
+      const now = Date.now() / 1000;
+      const left = Math.max(0, Math.floor(freePlateModal.request.expires_at - now));
+      setModalTimeRemaining(left);
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [freePlateModal?.open, freePlateModal?.request?.expires_at]);
+
   const stampCounts = useMemo(() => {
     const counts = { 'Steam Veg': 0, Afghani: 0, Fried: 0 };
     stamps.forEach((s) => {
-      if (s.status === 'approved' && counts[s.category] !== undefined) {
+      if (s.status === 'approved' && !s.claimed && counts[s.category] !== undefined) {
         counts[s.category] += 1;
       }
     });
     return counts;
+  }, [stamps]);
+
+  const claimedStampsCount = useMemo(() => {
+    return stamps.filter((s) => s.status === 'approved' && s.claimed).length;
   }, [stamps]);
 
   const totalStampsAll = useMemo(() => {
@@ -185,6 +205,54 @@ function UserDashboardContent() {
       setSubmitting(false);
     }
   };
+
+  const handleClaimFreePlate = async (categoryName) => {
+    setFreePlateModal({
+      open: true,
+      loading: true,
+      error: null,
+      request: null,
+      category: categoryName,
+      initialUnclaimed: totalStampsAll,
+      approvedSuccess: false,
+    });
+    setModalTimeRemaining(120);
+
+    try {
+      const res = await api.intentToGetFreePlate();
+      setFreePlateModal((prev) => ({
+        ...prev,
+        loading: false,
+        request: res.request,
+        error: null,
+      }));
+    } catch (err) {
+      setFreePlateModal((prev) => ({
+        ...prev,
+        loading: false,
+        error: err.message || 'Failed to submit free plate request.',
+      }));
+    }
+  };
+
+  // Real-time detection when chef approves free plate (unclaimed stamps decrease by 5)
+  useEffect(() => {
+    if (
+      freePlateModal?.open &&
+      freePlateModal?.request &&
+      !freePlateModal?.approvedSuccess &&
+      totalStampsAll < freePlateModal.initialUnclaimed
+    ) {
+      setFreePlateModal((prev) => (prev ? { ...prev, approvedSuccess: true } : null));
+    }
+  }, [
+    totalStampsAll,
+    freePlateModal?.open,
+    freePlateModal?.request,
+    freePlateModal?.approvedSuccess,
+    freePlateModal?.initialUnclaimed,
+  ]);
+
 
   if (loading) {
     return (
@@ -474,12 +542,7 @@ function UserDashboardContent() {
                     {hasReward ? (
                       <button
                         type="button"
-                        onClick={() =>
-                          setRedeemModal({
-                            category: cat.name,
-                            count: totalApproved,
-                          })
-                        }
+                        onClick={() => handleClaimFreePlate(cat.name)}
                         className="w-full py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)] active:scale-95 transition-all flex items-center justify-center gap-1.5"
                       >
                         <Gift className="w-3.5 h-3.5" />
@@ -540,9 +603,15 @@ function UserDashboardContent() {
                           </span>
                         )}
                         {s.status === 'approved' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
-                            +1 STAMP
-                          </span>
+                          s.claimed ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
+                              CLAIMED
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
+                              +1 STAMP
+                            </span>
+                          )
                         )}
                         {s.status === 'rejected' && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 border border-red-700 text-red-300">
@@ -560,46 +629,161 @@ function UserDashboardContent() {
 
       </div>
 
-      {redeemModal && (
+      {freePlateModal?.open && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141a] border-2 border-amber-400 rounded-xl p-6 sm:p-8 max-w-md w-full relative shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] font-mono">
             <button
-              onClick={() => setRedeemModal(null)}
+              type="button"
+              onClick={() => setFreePlateModal(null)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="text-center mb-6">
-              <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
-                Free {redeemModal.category} Plate
-              </h3>
-              <p className="text-xs text-zinc-400 mt-1">
-                Show this digital pass to the chef at the truck counter to redeem.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-lg bg-zinc-900 border-2 border-dashed border-zinc-700 space-y-2 mb-6">
-              <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                <span>VOUCHER // PASS-CODE</span>
-                <span className="text-emerald-400 font-bold">VERIFIED</span>
+            {freePlateModal.loading && (
+              <div className="text-center py-8 space-y-4">
+                <Loader2 className="w-10 h-10 text-amber-400 animate-spin mx-auto" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Contacting Chef Counter...
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Verifying your unclaimed stamps and transmitting your free plate intent.
+                </p>
               </div>
-              <p className="text-base sm:text-lg font-black text-amber-400 tracking-wider">
-                MOMO-FREE-{redeemModal.category.substring(0, 3).toUpperCase()}-PASS
-              </p>
-              <div className="text-[10px] text-zinc-400 border-t border-zinc-800 pt-2 flex items-center justify-between">
-                <span>HOLDER: {user?.email}</span>
-                <span>5/5 STAMPS</span>
-              </div>
-            </div>
+            )}
 
-            <button
-              type="button"
-              onClick={() => setRedeemModal(null)}
-              className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
-            >
-              [ Close Voucher ]
-            </button>
+            {!freePlateModal.loading && freePlateModal.error && (
+              <div className="text-center py-6 space-y-4">
+                <div className="w-12 h-12 rounded-lg bg-red-950 border-2 border-red-700 mx-auto flex items-center justify-center text-red-400">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-black text-white uppercase">Request Failed</h3>
+                <p className="text-xs text-red-300 bg-red-950/60 p-3 rounded border border-red-800">
+                  {freePlateModal.error}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFreePlateModal(null)}
+                  className="w-full py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs uppercase border border-zinc-700"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+
+            {!freePlateModal.loading && !freePlateModal.error && freePlateModal.approvedSuccess && (
+              <div className="text-center py-6 space-y-4">
+                <div className="w-14 h-14 rounded-full bg-emerald-950 border-2 border-emerald-500 mx-auto flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-black text-white uppercase">Free Plate Approved!</h3>
+                <p className="text-xs text-emerald-300 bg-emerald-950/60 p-3 rounded border border-emerald-700 leading-relaxed">
+                  The chef has approved your complimentary plate and deducted 5 stamps from your card. Your momos are being prepared!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFreePlateModal(null)}
+                  className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
+                >
+                  [ Done &amp; Enjoy ]
+                </button>
+              </div>
+            )}
+
+            {!freePlateModal.loading && !freePlateModal.error && !freePlateModal.approvedSuccess && (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/40 text-amber-400 text-xs font-black mb-3">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span>BROADCAST TO CHEF COUNTER</span>
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase">
+                    Free Plate Request Active
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Show this screen to the chef at the truck counter to claim your free plate.
+                  </p>
+                </div>
+
+                {/* 2-Min Countdown Bar */}
+                <div className="bg-zinc-900 border-2 border-zinc-800 rounded-lg p-3.5 text-center">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-zinc-400 font-bold uppercase flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      Timer (2-Min Cache):
+                    </span>
+                    <span
+                      className={`font-black text-sm ${
+                        modalTimeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-amber-400'
+                      }`}
+                    >
+                      {Math.floor(modalTimeRemaining / 60)}:
+                      {(modalTimeRemaining % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-1000 ${
+                        modalTimeRemaining <= 30 ? 'bg-red-400' : 'bg-amber-400'
+                      }`}
+                      style={{ width: `${Math.max(0, (modalTimeRemaining / 120) * 100)}%` }}
+                    />
+                  </div>
+                  {modalTimeRemaining === 0 && (
+                    <p className="text-[10px] text-red-400 font-bold mt-2">
+                      Request expired in cache. Click &apos;Re-submit&apos; below.
+                    </p>
+                  )}
+                </div>
+
+                {/* Breakdown of unclaimed stamps */}
+                <div className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                    Your Unclaimed Stamps:
+                  </span>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800">
+                      <span className="text-base block">🥟</span>
+                      <span className="text-[10px] text-zinc-400 block">Steam Veg</span>
+                      <span className="font-black text-white">{stampCounts['Steam Veg']}</span>
+                    </div>
+                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800">
+                      <span className="text-base block">🥘</span>
+                      <span className="text-[10px] text-zinc-400 block">Afghani</span>
+                      <span className="font-black text-white">{stampCounts['Afghani']}</span>
+                    </div>
+                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800">
+                      <span className="text-base block">🔥</span>
+                      <span className="text-[10px] text-zinc-400 block">Fried</span>
+                      <span className="font-black text-white">{stampCounts['Fried']}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-zinc-400 bg-zinc-900/60 p-3 rounded border border-dashed border-zinc-800 leading-relaxed">
+                  The chef will select which category has 5 stamps to redeem and approve it on the counter dashboard.
+                </div>
+
+                <div className="flex gap-2">
+                  {modalTimeRemaining === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleClaimFreePlate(freePlateModal.category)}
+                      className="flex-1 py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
+                    >
+                      Re-submit Request
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setFreePlateModal(null)}
+                    className="flex-1 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider border border-zinc-700"
+                  >
+                    [ Close ]
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
