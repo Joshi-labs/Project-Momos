@@ -60,7 +60,6 @@ function UserDashboardContent() {
   const [isQuantityOpen, setIsQuantityOpen] = useState(false);
   const [loadingStamps, setLoadingStamps] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState(null);
   const [freePlateModal, setFreePlateModal] = useState(null);
 
   const fetchMyStamps = useCallback(async () => {
@@ -155,21 +154,11 @@ function UserDashboardContent() {
 
   const handleClaimStamp = async () => {
     if (!user || submitting || hasPendingClaim) return;
-    setFeedback(null);
-
     setSubmitting(true);
     try {
       await api.claimStamp(selectedCategory, stampCount);
-      setFeedback({
-        type: 'success',
-        text: `Stamp request submitted for ${stampCount}x ${selectedCategory}! The truck chef will approve it in seconds.`,
-      });
       await fetchMyStamps();
     } catch (err) {
-      setFeedback({
-        type: 'error',
-        text: err.message || 'Failed to submit stamp claim. Please try again.',
-      });
     } finally {
       setSubmitting(false);
     }
@@ -287,23 +276,6 @@ function UserDashboardContent() {
             <p className="text-xs text-zinc-400 mb-5 leading-relaxed">
               Standing at the truck counter? Tap the momo style you ordered to submit a stamp verification request.
             </p>
-
-            {(feedback && hasPendingClaim) && (
-              <div
-                className={`mb-5 p-3 rounded-lg border font-mono text-xs flex items-start gap-2 ${
-                  feedback.type === 'success'
-                    ? 'bg-emerald-950/60 border-emerald-700 text-emerald-200'
-                    : 'bg-red-950/60 border-red-700 text-red-200'
-                }`}
-              >
-                {feedback.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                )}
-                <span>{feedback.text}</span>
-              </div>
-            )}
 
             <div className="grid grid-cols-3 gap-2 mb-5 font-mono">
               {CATEGORIES.map((cat) => {
