@@ -549,11 +549,10 @@ function UserDashboardContent() {
                         </div>
                       </div>
 
-
                       <div>
                         {s.status === 'pending' && (
                           <span className="px-3 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
-                            PENDING {s.count && s.count > 1 ? (${s.count}) : ''}
+                            PENDING {s.count && s.count > 1 ? `(${s.count})` : ''}
                           </span>
                         )}
                       </div>
