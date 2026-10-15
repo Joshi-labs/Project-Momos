@@ -528,17 +528,17 @@ function UserDashboardContent() {
 
                       <div>
                         {s.status === 'pending' && (
-                          <span className="px-2 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
+                          <span className="px-3 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
                             PENDING {s.count && s.count > 1 ? `(${s.count})` : ''}
                           </span>
                         )}
                         {s.status === 'approved' && (
                           s.claimed ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
+                            <span className="px-2 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
                               CLAIMED
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
+                            <span className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
                               APPROVED
                             </span>
                           )
