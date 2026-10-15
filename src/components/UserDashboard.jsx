@@ -197,8 +197,6 @@ function UserDashboardContent() {
       error: null,
       request: null,
       category: categoryName,
-      initialUnclaimed: totalStampsAll,
-      approvedSuccess: false,
     });
 
     try {
@@ -218,23 +216,6 @@ function UserDashboardContent() {
     }
   };
 
-  // Real-time detection when chef approves free plate (unclaimed stamps decrease by 5)
-  useEffect(() => {
-    if (
-      freePlateModal?.open &&
-      freePlateModal?.request &&
-      !freePlateModal?.approvedSuccess &&
-      totalStampsAll < freePlateModal.initialUnclaimed
-    ) {
-      setFreePlateModal((prev) => (prev ? { ...prev, approvedSuccess: true } : null));
-    }
-  }, [
-    totalStampsAll,
-    freePlateModal?.open,
-    freePlateModal?.request,
-    freePlateModal?.approvedSuccess,
-    freePlateModal?.initialUnclaimed,
-  ]);
 
 
   if (loading) {
@@ -354,7 +335,7 @@ function UserDashboardContent() {
               })}
             </div>
 
-            {/* Stamp Quantity Slider (1 to 10) - Collapsible Dropdown */}
+            {/* Stamp Quantity Slider (1 to 5) - Collapsible Dropdown */}
             <div className="mb-5 bg-zinc-900 border-2 border-zinc-800 rounded-lg font-mono transition-all overflow-hidden">
               <button
                 type="button"
@@ -387,7 +368,7 @@ function UserDashboardContent() {
                       <input
                         type="range"
                         min="1"
-                        max="10"
+                        max="5"
                         step="1"
                         value={stampCount}
                         onChange={(e) => setStampCount(Number(e.target.value))}
@@ -395,14 +376,14 @@ function UserDashboardContent() {
                       />
                       <div className="flex justify-between text-[9px] text-zinc-500 font-bold px-0.5 select-none">
                         <span>1</span>
-                        <span>10</span>
+                        <span>5</span>
                       </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setStampCount((prev) => Math.min(10, prev + 1))}
-                      disabled={stampCount >= 10}
+                      disabled={stampCount >= 5}
                       className="w-7 h-7 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-white font-bold text-sm flex items-center justify-center border border-zinc-700 active:scale-95 transition-all shrink-0 cursor-pointer"
                       title="Increase stamps"
                     >
@@ -657,31 +638,9 @@ function UserDashboardContent() {
               </div>
             )}
 
-            {!freePlateModal.loading && !freePlateModal.error && freePlateModal.approvedSuccess && (
-              <div className="text-center py-6 space-y-4">
-                <div className="w-14 h-14 rounded-full bg-emerald-950 border-2 border-emerald-500 mx-auto flex items-center justify-center text-emerald-400">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-black text-white uppercase">Free Plate Approved!</h3>
-                <p className="text-xs text-emerald-300 bg-emerald-950/60 p-3 rounded border border-emerald-700 leading-relaxed">
-                  The chef has approved your complimentary plate and deducted 5 stamps from your card. Your momos are being prepared!
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setFreePlateModal(null)}
-                  className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]"
-                >
-                  [ Done &amp; Enjoy ]
-                </button>
-              </div>
-            )}
-
-            {!freePlateModal.loading && !freePlateModal.error && !freePlateModal.approvedSuccess && (
+            {!freePlateModal.loading && !freePlateModal.error && (
               <div>
                 <div className="text-center mb-6">
-                  <span className="text-amber-400 text-xs font-black uppercase tracking-wider block mb-1">
-                    // COMPLIMENTARY VOUCHER UNLOCKED
-                  </span>
                   <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
                     Free {freePlateModal.category} Plate
                   </h3>
