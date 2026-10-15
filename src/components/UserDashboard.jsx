@@ -528,7 +528,7 @@ function UserDashboardContent() {
 
                       <div>
                         {s.status === 'pending' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
+                          <span className="px-2 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
                             PENDING {s.count && s.count > 1 ? `(${s.count})` : ''}
                           </span>
                         )}
@@ -542,11 +542,6 @@ function UserDashboardContent() {
                               APPROVED
                             </span>
                           )
-                        )}
-                        {s.status === 'rejected' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 border border-red-700 text-red-300">
-                            REJECTED
-                          </span>
                         )}
                       </div>
                     </div>
