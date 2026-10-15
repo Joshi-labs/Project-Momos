@@ -73,7 +73,6 @@ function UserDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [freePlateModal, setFreePlateModal] = useState(null);
-  const [modalTimeRemaining, setModalTimeRemaining] = useState(120);
 
   const fetchMyStamps = useCallback(async () => {
     if (!user) {
@@ -132,21 +131,6 @@ function UserDashboardContent() {
       }
     };
   }, [fetchMyStamps, user?.id]);
-
-  // Modal expiration countdown timer
-  useEffect(() => {
-    if (!freePlateModal?.open || !freePlateModal?.request?.expires_at) return;
-
-    const tick = () => {
-      const now = Date.now() / 1000;
-      const left = Math.max(0, Math.floor(freePlateModal.request.expires_at - now));
-      setModalTimeRemaining(left);
-    };
-
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
-  }, [freePlateModal?.open, freePlateModal?.request?.expires_at]);
 
   const stampCounts = useMemo(() => {
     const counts = { 'Steam Veg': 0, Afghani: 0, Fried: 0 };
@@ -216,7 +200,6 @@ function UserDashboardContent() {
       initialUnclaimed: totalStampsAll,
       approvedSuccess: false,
     });
-    setModalTimeRemaining(120);
 
     try {
       const res = await api.intentToGetFreePlate();
@@ -272,16 +255,19 @@ function UserDashboardContent() {
       <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 sm:p-7 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-3 min-w-0 max-w-full">
-            <div className="w-11 h-11 rounded-lg bg-amber-400 text-black font-black text-lg border-2 border-black flex items-center justify-center shrink-0">
-              {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'M'}
+
+            <div className="w-11 h-11 rounded-lg border-2 border-black overflow-hidden shrink-0">
+              <img
+                src={`https://api.dicebear.com/10.x/avataaars/svg?backgroundColor=ffbe47&seed=${encodeURIComponent(user?.name || user?.email || 'M')}`}
+                alt="User avatar"
+                className="w-full h-full object-cover"
+              />
             </div>
+
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm sm:text-base font-black text-white uppercase truncate">
                   MOMO LOYALTY CARD
-                </span>
-                <span className="text-[10px] bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-emerald-400 font-bold shrink-0">
-                  CONNECTED
                 </span>
               </div>
               <p
@@ -691,97 +677,40 @@ function UserDashboardContent() {
             )}
 
             {!freePlateModal.loading && !freePlateModal.error && !freePlateModal.approvedSuccess && (
-              <div className="space-y-5">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/40 text-amber-400 text-xs font-black mb-3">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                    <span>BROADCAST TO CHEF COUNTER</span>
-                  </div>
-                  <h3 className="text-xl font-black text-white uppercase">
-                    Free Plate Request Active
+              <div>
+                <div className="text-center mb-6">
+                  <span className="text-amber-400 text-xs font-black uppercase tracking-wider block mb-1">
+                    // COMPLIMENTARY VOUCHER UNLOCKED
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
+                    Free {freePlateModal.category} Plate
                   </h3>
                   <p className="text-xs text-zinc-400 mt-1">
-                    Show this screen to the chef at the truck counter to claim your free plate.
+                    Show this digital pass to the chef at the truck counter to redeem.
                   </p>
                 </div>
 
-                {/* 2-Min Countdown Bar */}
-                <div className="bg-zinc-900 border-2 border-zinc-800 rounded-lg p-3.5 text-center">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-zinc-400 font-bold uppercase flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
-                      Timer (2-Min Cache):
-                    </span>
-                    <span
-                      className={`font-black text-sm ${
-                        modalTimeRemaining <= 30 ? 'text-red-400 animate-pulse' : 'text-amber-400'
-                      }`}
-                    >
-                      {Math.floor(modalTimeRemaining / 60)}:
-                      {(modalTimeRemaining % 60).toString().padStart(2, '0')}
-                    </span>
+                <div className="p-4 rounded-lg bg-zinc-900 border-2 border-dashed border-zinc-700 space-y-2 mb-6">
+                  <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                    <span>VOUCHER // PASS-CODE</span>
+                    <span className="text-emerald-400 font-bold">VERIFIED</span>
                   </div>
-                  <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-1000 ${
-                        modalTimeRemaining <= 30 ? 'bg-red-400' : 'bg-amber-400'
-                      }`}
-                      style={{ width: `${Math.max(0, (modalTimeRemaining / 120) * 100)}%` }}
-                    />
-                  </div>
-                  {modalTimeRemaining === 0 && (
-                    <p className="text-[10px] text-red-400 font-bold mt-2">
-                      Request expired in cache. Click &apos;Re-submit&apos; below.
-                    </p>
-                  )}
-                </div>
-
-                {/* Breakdown of unclaimed stamps */}
-                <div className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
-                    Your Unclaimed Stamps:
-                  </span>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800">
-                      <span className="text-base block">🥟</span>
-                      <span className="text-[10px] text-zinc-400 block">Steam Veg</span>
-                      <span className="font-black text-white">{stampCounts['Steam Veg']}</span>
-                    </div>
-                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800">
-                      <span className="text-base block">🥘</span>
-                      <span className="text-[10px] text-zinc-400 block">Afghani</span>
-                      <span className="font-black text-white">{stampCounts['Afghani']}</span>
-                    </div>
-                    <div className="bg-zinc-950 p-2 rounded border border-zinc-800">
-                      <span className="text-base block">🔥</span>
-                      <span className="text-[10px] text-zinc-400 block">Fried</span>
-                      <span className="font-black text-white">{stampCounts['Fried']}</span>
-                    </div>
+                  <p className="text-base sm:text-lg font-black text-amber-400 tracking-wider">
+                    MOMO-FREE-{(freePlateModal.category || 'MOM').substring(0, 3).toUpperCase()}-PASS
+                  </p>
+                  <div className="text-[10px] text-zinc-400 border-t border-zinc-800 pt-2 flex items-center justify-between">
+                    <span>HOLDER: {user?.email}</span>
+                    <span>5/5 STAMPS</span>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-zinc-400 bg-zinc-900/60 p-3 rounded border border-dashed border-zinc-800 leading-relaxed">
-                  The chef will select which category has 5 stamps to redeem and approve it on the counter dashboard.
-                </div>
-
-                <div className="flex gap-2">
-                  {modalTimeRemaining === 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => handleClaimFreePlate(freePlateModal.category)}
-                      className="flex-1 py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
-                    >
-                      Re-submit Request
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setFreePlateModal(null)}
-                    className="flex-1 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider border border-zinc-700"
-                  >
-                    [ Close ]
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setFreePlateModal(null)}
+                  className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
+                >
+                  [ Close Voucher ]
+                </button>
               </div>
             )}
           </div>
