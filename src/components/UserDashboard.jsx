@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
-import {
-  Award,
-  Flame,
-  PlusCircle,
-  CheckCircle2,
-  Clock,
-  Gift,
-  RefreshCw,
-  AlertCircle,
-  X,
-  Loader2,
-} from 'lucide-react';
+import { Award, Flame, PlusCircle, CheckCircle2, Clock, Gift, RefreshCw, AlertCircle, X, Loader2 } from 'lucide-react';
 
 const CATEGORIES = [
   {
@@ -142,10 +131,6 @@ function UserDashboardContent() {
     return counts;
   }, [stamps]);
 
-  const claimedStampsCount = useMemo(() => {
-    return stamps.filter((s) => s.status === 'approved' && s.claimed).length;
-  }, [stamps]);
-
   const totalStampsAll = useMemo(() => {
     return Object.values(stampCounts).reduce((a, b) => a + b, 0);
   }, [stampCounts]);
@@ -253,9 +238,15 @@ function UserDashboardContent() {
               </div>
               <p
                 className="text-xs text-zinc-400 font-mono truncate max-w-full"
-                title={`ID: ${user?.email || ''} ${user?.name ? `(${user.name})` : ''}`}
+                title={`ID: ${user?.email || ''}`}
               >
-                ID: {user?.email} {user?.name ? `(${user.name})` : ''}
+                ID: {user?.email || 'N/A'}
+              </p>
+              <p
+                className="text-xs text-zinc-400 font-mono truncate max-w-full"
+                title={`NAME: ${user?.name || ''}`}
+              >
+                NAME: {user?.name || 'N/A'}
               </p>
             </div>
           </div>
