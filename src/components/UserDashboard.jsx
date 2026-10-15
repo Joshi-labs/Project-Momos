@@ -240,27 +240,50 @@ function UserDashboardContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-3 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
-            <div className="bg-zinc-900 border-2 border-zinc-800 px-3.5 py-2 rounded-lg text-center">
-              <span className="text-[10px] text-zinc-400 block uppercase font-bold">Approved Stamps</span>
-              <span className="text-base font-black text-white">{totalStampsAll}</span>
+
+          <div className="grid grid-cols-2 sm:flex sm:items-stretch gap-3 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
+
+            {/* Approved Stamps */}
+            <div className="min-w-0 sm:min-w-[140px] bg-zinc-900 border-2 border-zinc-800 px-3 py-2.5 rounded-lg flex flex-col justify-center">
+              <span className="text-[10px] text-zinc-400 uppercase font-bold truncate">
+                Approved Stamps
+              </span>
+              <span className="text-base font-black text-white">
+                {totalStampsAll}
+              </span>
             </div>
 
-            <div className="bg-zinc-900 border-2 border-zinc-800 px-3.5 py-2 rounded-lg text-center">
-              <span className="text-[10px] text-zinc-400 block uppercase font-bold">Free Plates</span>
-              <span className="text-base font-black text-amber-400">{totalFreePlatesAvailable} READY</span>
+            {/* Free Plates */}
+            <div className="min-w-0 sm:min-w-[140px] bg-zinc-900 border-2 border-zinc-800 px-3 py-2.5 rounded-lg flex flex-col justify-center">
+              <span className="text-[10px] text-zinc-400 uppercase font-bold truncate">
+                Free Plates
+              </span>
+              <span className="text-base font-black text-amber-400 truncate">
+                {totalFreePlatesAvailable} READY
+              </span>
             </div>
 
+            {/* Refresh */}
             <button
               type="button"
               onClick={fetchMyStamps}
               disabled={loadingStamps}
-              className="p-3 rounded-lg bg-zinc-900 border-2 border-zinc-700 text-zinc-300 hover:text-white active:scale-95 transition-all shrink-0"
+              className="col-span-2 sm:col-span-1 min-h-10 sm:min-h-0 sm:w-11 sm:shrink-0 flex items-center justify-center gap-2 rounded-lg bg-zinc-900 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 active:scale-95 transition-all disabled:opacity-50"
               title="Refresh Stamps"
+              aria-label="Refresh stamps"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingStamps ? 'animate-spin text-amber-400' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${
+                  loadingStamps ? 'animate-spin text-amber-400' : ''
+                }`}
+              />
+              <span className="text-xs font-bold sm:hidden">
+                {loadingStamps ? 'Refreshing...' : 'Refresh Stamps'}
+              </span>
             </button>
+
           </div>
+
         </div>
       </div>
 
@@ -526,24 +549,27 @@ function UserDashboardContent() {
                         </div>
                       </div>
 
+
                       <div>
                         {s.status === 'pending' && (
-                          <span className="px-3 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
+                          <span className="w-28 h-7 inline-flex items-center justify-center rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
                             PENDING {s.count && s.count > 1 ? `(${s.count})` : ''}
                           </span>
                         )}
+
                         {s.status === 'approved' && (
                           s.claimed ? (
-                            <span className="px-2 py-1 rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
+                            <span className="w-28 h-7 inline-flex items-center justify-center rounded text-[10px] font-bold bg-amber-950 border border-amber-700 text-amber-300">
                               CLAIMED
                             </span>
                           ) : (
-                            <span className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
+                            <span className="w-28 h-7 inline-flex items-center justify-center rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
                               APPROVED
                             </span>
                           )
                         )}
                       </div>
+
                     </div>
                   );
                 })}
