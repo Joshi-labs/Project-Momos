@@ -539,7 +539,7 @@ function UserDashboardContent() {
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 border border-emerald-700 text-emerald-300">
-                              +1 STAMP
+                              APPROVED
                             </span>
                           )
                         )}
