@@ -222,7 +222,7 @@ function UserDashboardContent() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-3 min-w-0 max-w-full">
 
-            <div className="w-11 h-11 rounded-lg border-2 border-black overflow-hidden shrink-0">
+            <div className="w-14 h-14 rounded-lg border-2 border-black overflow-hidden shrink-0">
               <img
                 src={`https://api.dicebear.com/10.x/avataaars/svg?backgroundColor=ffbe47&seed=${encodeURIComponent(user?.name || user?.email || 'M')}`}
                 alt="User avatar"
@@ -288,7 +288,7 @@ function UserDashboardContent() {
               Standing at the truck counter? Tap the momo style you ordered to submit a stamp verification request.
             </p>
 
-            {feedback && (
+            {(feedback && hasPendingClaim) && (
               <div
                 className={`mb-5 p-3 rounded-lg border font-mono text-xs flex items-start gap-2 ${
                   feedback.type === 'success'
