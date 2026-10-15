@@ -244,7 +244,7 @@ function UserDashboardContent() {
           <div className="grid grid-cols-2 sm:flex sm:items-stretch gap-3 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
 
             {/* Approved Stamps */}
-            <div className="min-w-0 sm:min-w-[140px] bg-zinc-900 border-2 border-zinc-800 px-3 py-2.5 rounded-lg flex flex-col justify-center">
+            <div className="min-w-0 sm:min-w-[140px] bg-zinc-900 border-2 border-zinc-800 px-3 py-2.5 rounded-lg flex flex-col justify-center items-center text-center">
               <span className="text-[10px] text-zinc-400 uppercase font-bold truncate">
                 Approved Stamps
               </span>
@@ -254,7 +254,7 @@ function UserDashboardContent() {
             </div>
 
             {/* Free Plates */}
-            <div className="min-w-0 sm:min-w-[140px] bg-zinc-900 border-2 border-zinc-800 px-3 py-2.5 rounded-lg flex flex-col justify-center">
+            <div className="min-w-0 sm:min-w-[140px] bg-zinc-900 border-2 border-zinc-800 px-3 py-2.5 rounded-lg flex flex-col justify-center items-center text-center">
               <span className="text-[10px] text-zinc-400 uppercase font-bold truncate">
                 Free Plates
               </span>
