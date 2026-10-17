@@ -426,7 +426,7 @@ function UserDashboardContent() {
                             {isStamped ? (
                               <>
                                 <span className="text-base leading-none">🥟</span>
-                                <span className="text-[8px] font-black uppercase mt-0.5">OK</span>
+                                <span className="text-[8px] font-black uppercase mt-0.5">stamp</span>
                               </>
                             ) : (
                               <span className="text-[11px] font-bold">0{slot}</span>
