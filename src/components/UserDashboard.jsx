@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
-import { Award, Flame, PlusCircle, CheckCircle2, Clock, Gift, RefreshCw, AlertCircle, X, Loader2 } from 'lucide-react';
+import { Award, Flame, PlusCircle, Clock, Gift, RefreshCw, X, Loader2 } from 'lucide-react';
 
 const CATEGORIES = [
   {
@@ -46,37 +46,20 @@ function UserDashboardContent() {
     return 'Steam Veg';
   });
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const preselect = new URLSearchParams(window.location.search).get('category');
-      if (preselect && CATEGORIES.some((c) => c.name === preselect)) {
-        setSelectedCategory(preselect);
-      }
-    }
-  }, []);
-
   const [stamps, setStamps] = useState([]);
   const [stampCount, setStampCount] = useState(1);
   const [isQuantityOpen, setIsQuantityOpen] = useState(false);
-  const [loadingStamps, setLoadingStamps] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [freePlateModal, setFreePlateModal] = useState(null);
+  const [activeVoucherCategory, setActiveVoucherCategory] = useState(null);
 
   const fetchMyStamps = useCallback(async () => {
-    if (!user) {
-      setLoadingStamps(false);
-      return;
-    }
-
+    if (!user) return;
     try {
       const data = await api.getMyStamps();
-      // Only update state if data reference changed (304 Not Modified retains same reference)
       setStamps((prev) => (prev === data ? prev : (data || [])));
     } catch (err) {
       console.error('Failed to load stamps:', err);
-    } finally {
-      setLoadingStamps(false);
     }
   }, [user]);
 
@@ -85,34 +68,15 @@ function UserDashboardContent() {
     fetchMyStamps();
 
     const unsub = api.subscribeStamps((e) => {
-      // Whenever a stamp is created/updated/deleted for this user
       if (e.record && (!e.record.user || e.record.user === user?.id)) {
         fetchMyStamps();
       }
     });
 
-    // Poll every 2.5s, pausing when tab is inactive to preserve bandwidth & CPU
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
-      fetchMyStamps();
-    }, 2500);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchMyStamps();
-      }
-    };
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
+    const interval = setInterval(fetchMyStamps, 3000);
 
     return () => {
       clearInterval(interval);
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }
       if (typeof unsub === 'function') {
         unsub();
       } else {
@@ -121,35 +85,27 @@ function UserDashboardContent() {
     };
   }, [fetchMyStamps, user?.id]);
 
-  const stampCounts = useMemo(() => {
-    const counts = { 'Steam Veg': 0, Afghani: 0, Fried: 0 };
-    stamps.forEach((s) => {
-      if (s.status === 'approved' && !s.claimed && counts[s.category] !== undefined) {
-        counts[s.category] += 1;
-      }
-    });
-    return counts;
-  }, [stamps]);
+  // Derive all stamp metrics in one clean pass
+  const stampCounts = { 'Steam Veg': 0, Afghani: 0, Fried: 0 };
+  let pendingClaim = null;
 
-  const totalStampsAll = useMemo(() => {
-    return Object.values(stampCounts).reduce((a, b) => a + b, 0);
-  }, [stampCounts]);
+  for (const s of stamps) {
+    if (s.status === 'pending' && !pendingClaim) {
+      pendingClaim = s;
+    } else if (s.status === 'approved' && !s.claimed && stampCounts[s.category] !== undefined) {
+      stampCounts[s.category] += 1;
+    }
+  }
 
-  const totalFreePlatesAvailable = useMemo(() => {
-    return Object.values(stampCounts).reduce((acc, count) => acc + Math.floor(count / 5), 0);
-  }, [stampCounts]);
+  const totalStampsAll = stampCounts['Steam Veg'] + stampCounts['Afghani'] + stampCounts['Fried'];
+  const totalFreePlatesAvailable =
+    Math.floor(stampCounts['Steam Veg'] / 5) +
+    Math.floor(stampCounts['Afghani'] / 5) +
+    Math.floor(stampCounts['Fried'] / 5);
 
-  const sortedStamps = useMemo(() => {
-    return [...stamps].sort((a, b) => {
-      const timeA = new Date(a.created || a.created_at || 0).getTime();
-      const timeB = new Date(b.created || b.created_at || 0).getTime();
-      return timeB - timeA;
-    });
-  }, [stamps]);
-
-  const pendingClaim = useMemo(() => {
-    return stamps.find((s) => s.status === 'pending');
-  }, [stamps]);
+  const recentStamps = [...stamps]
+    .sort((a, b) => new Date(b.created || b.created_at || 0) - new Date(a.created || a.created_at || 0))
+    .slice(0, 5);
 
   const hasPendingClaim = Boolean(pendingClaim);
 
@@ -160,32 +116,28 @@ function UserDashboardContent() {
       await api.claimStamp(selectedCategory, stampCount);
       await fetchMyStamps();
     } catch (err) {
+      console.error('Failed to claim stamp:', err);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleManualRefresh = async () => {
-    if (isRefreshing || loadingStamps) return;
+    if (isRefreshing) return;
     setIsRefreshing(true);
     const start = Date.now();
     try {
       await fetchMyStamps();
     } finally {
       const elapsed = Date.now() - start;
-      const remaining = Math.max(0, 1000 - elapsed);
       setTimeout(() => {
         setIsRefreshing(false);
-      }, remaining);
+      }, Math.max(0, 1000 - elapsed));
     }
   };
 
   const handleClaimFreePlate = (categoryName) => {
-    setFreePlateModal({
-      open: true,
-      category: categoryName,
-    });
-
+    setActiveVoucherCategory(categoryName);
     api.intentToGetFreePlate().catch((err) => {
       console.error('Failed to register free plate intent:', err);
     });
@@ -519,13 +471,13 @@ function UserDashboardContent() {
               Stamp Activity Log (last 5)
             </h3>
 
-            {sortedStamps.length === 0 ? (
+            {recentStamps.length === 0 ? (
               <div className="text-center py-6 text-xs text-zinc-500 font-mono">
                 [ NO STAMPS LOGGED YET ]
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-                {sortedStamps.slice(0, 5).map((s) => {
+                {recentStamps.map((s) => {
                   const timestamp = s.created || s.created_at;
                   const d = timestamp ? new Date(timestamp) : null;
                   const dateStr = d && !isNaN(d.getTime())
@@ -568,12 +520,12 @@ function UserDashboardContent() {
 
       </div>
 
-      {freePlateModal?.open && (
+      {activeVoucherCategory && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141a] border-2 border-amber-400 rounded-xl p-6 sm:p-8 max-w-md w-full relative shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] font-mono">
             <button
               type="button"
-              onClick={() => setFreePlateModal(null)}
+              onClick={() => setActiveVoucherCategory(null)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
             >
               <X className="w-4 h-4" />
@@ -582,7 +534,7 @@ function UserDashboardContent() {
             <div>
               <div className="text-center mb-6">
                 <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
-                  Free {freePlateModal.category} Plate
+                  Free {activeVoucherCategory} Plate
                 </h3>
                 <p className="text-xs text-zinc-400 mt-1">
                   Show this digital pass to the chef at the truck counter to redeem.
@@ -595,7 +547,7 @@ function UserDashboardContent() {
                   <span className="text-emerald-400 font-bold">VERIFIED</span>
                 </div>
                 <p className="text-base sm:text-lg font-black text-amber-400 tracking-wider">
-                  MOMO-FREE-{(freePlateModal.category || 'MOM').substring(0, 3).toUpperCase()}-PASS
+                  MOMO-FREE-{activeVoucherCategory.substring(0, 3).toUpperCase()}-PASS
                 </p>
                 <div className="text-[10px] text-zinc-400 border-t border-zinc-800 pt-2 flex items-center justify-between">
                   <span>HOLDER: {user?.email}</span>
@@ -605,7 +557,7 @@ function UserDashboardContent() {
 
               <button
                 type="button"
-                onClick={() => setFreePlateModal(null)}
+                onClick={() => setActiveVoucherCategory(null)}
                 className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
               >
                 [ Close Voucher ]
