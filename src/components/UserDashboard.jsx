@@ -36,16 +36,7 @@ function UserDashboardContent() {
     }
   }, [loading, user]);
 
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const preselect = new URLSearchParams(window.location.search).get('category');
-      if (preselect && CATEGORIES.some((c) => c.name === preselect)) {
-        return preselect;
-      }
-    }
-    return 'Steam Veg';
-  });
-
+  const [selectedCategory, setSelectedCategory] = useState('Steam Veg');
   const [stamps, setStamps] = useState([]);
   const [stampCount, setStampCount] = useState(1);
   const [isQuantityOpen, setIsQuantityOpen] = useState(false);
@@ -68,6 +59,8 @@ function UserDashboardContent() {
     fetchMyStamps();
 
     const unsub = api.subscribeStamps((e) => {
+      // Don't refetch on local free plate intent broadcasts (stamps haven't changed)
+      if (e.action === 'free_plate_intent') return;
       if (e.record && (!e.record.user || e.record.user === user?.id)) {
         fetchMyStamps();
       }
@@ -398,7 +391,7 @@ function UserDashboardContent() {
               return (
                 <div
                   key={cat.name}
-                  className="bg-[#12141a] border-2 border-zinc-800 hover:border-zinc-700 rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)] flex flex-col justify-between transition-all"
+                  className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)] flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-dashed border-zinc-800 font-mono">
@@ -424,7 +417,7 @@ function UserDashboardContent() {
                         return (
                           <div
                             key={slot}
-                            className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all ${
+                            className={`aspect-square rounded-lg flex flex-col items-center justify-center ${
                               isStamped
                                 ? `${cat.stampBg} shadow-[1px_1px_0px_0px_rgba(255,255,255,0.2)]`
                                 : 'bg-zinc-900 border-2 border-dashed border-zinc-800 text-zinc-600 font-mono'
