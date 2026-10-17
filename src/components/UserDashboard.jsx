@@ -66,7 +66,7 @@ function UserDashboardContent() {
       }
     });
 
-    const interval = setInterval(fetchMyStamps, 3000);
+    const interval = setInterval(fetchMyStamps, 2500);
 
     return () => {
       clearInterval(interval);
