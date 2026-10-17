@@ -59,6 +59,7 @@ function UserDashboardContent() {
   const [stampCount, setStampCount] = useState(1);
   const [isQuantityOpen, setIsQuantityOpen] = useState(false);
   const [loadingStamps, setLoadingStamps] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [freePlateModal, setFreePlateModal] = useState(null);
 
@@ -164,30 +165,30 @@ function UserDashboardContent() {
     }
   };
 
-  const handleClaimFreePlate = async (categoryName) => {
+  const handleManualRefresh = async () => {
+    if (isRefreshing || loadingStamps) return;
+    setIsRefreshing(true);
+    const start = Date.now();
+    try {
+      await fetchMyStamps();
+    } finally {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, 1000 - elapsed);
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, remaining);
+    }
+  };
+
+  const handleClaimFreePlate = (categoryName) => {
     setFreePlateModal({
       open: true,
-      loading: true,
-      error: null,
-      request: null,
       category: categoryName,
     });
 
-    try {
-      const res = await api.intentToGetFreePlate();
-      setFreePlateModal((prev) => ({
-        ...prev,
-        loading: false,
-        request: res.request,
-        error: null,
-      }));
-    } catch (err) {
-      setFreePlateModal((prev) => ({
-        ...prev,
-        loading: false,
-        error: err.message || 'Failed to submit free plate request.',
-      }));
-    }
+    api.intentToGetFreePlate().catch((err) => {
+      console.error('Failed to register free plate intent:', err);
+    });
   };
 
 
@@ -266,19 +267,19 @@ function UserDashboardContent() {
             {/* Refresh */}
             <button
               type="button"
-              onClick={fetchMyStamps}
-              disabled={loadingStamps}
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
               className="col-span-2 sm:col-span-1 min-h-10 sm:min-h-0 sm:w-11 sm:shrink-0 flex items-center justify-center gap-2 rounded-lg bg-zinc-900 border-2 border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 active:scale-95 transition-all disabled:opacity-50"
               title="Refresh Stamps"
               aria-label="Refresh stamps"
             >
               <RefreshCw
                 className={`w-4 h-4 ${
-                  loadingStamps ? 'animate-spin text-amber-400' : ''
+                  isRefreshing ? 'animate-spin text-amber-400' : ''
                 }`}
               />
               <span className="text-xs font-bold sm:hidden">
-                {loadingStamps ? 'Refreshing...' : 'Refresh Stamps'}
+                {isRefreshing ? 'Refreshing...' : 'Refresh Stamps'}
               </span>
             </button>
 
@@ -578,71 +579,38 @@ function UserDashboardContent() {
               <X className="w-4 h-4" />
             </button>
 
-            {freePlateModal.loading && (
-              <div className="text-center py-8 space-y-4">
-                <Loader2 className="w-10 h-10 text-amber-400 animate-spin mx-auto" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Contacting Chef Counter...
+            <div>
+              <div className="text-center mb-6">
+                <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
+                  Free {freePlateModal.category} Plate
                 </h3>
-                <p className="text-xs text-zinc-400">
-                  Verifying your unclaimed stamps and transmitting your free plate intent.
+                <p className="text-xs text-zinc-400 mt-1">
+                  Show this digital pass to the chef at the truck counter to redeem.
                 </p>
               </div>
-            )}
 
-            {!freePlateModal.loading && freePlateModal.error && (
-              <div className="text-center py-6 space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-red-950 border-2 border-red-700 mx-auto flex items-center justify-center text-red-400">
-                  <AlertCircle className="w-6 h-6" />
+              <div className="p-4 rounded-lg bg-zinc-900 border-2 border-dashed border-zinc-700 space-y-2 mb-6">
+                <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                  <span>VOUCHER // PASS-CODE</span>
+                  <span className="text-emerald-400 font-bold">VERIFIED</span>
                 </div>
-                <h3 className="text-base font-black text-white uppercase">Request Failed</h3>
-                <p className="text-xs text-red-300 bg-red-950/60 p-3 rounded border border-red-800">
-                  {freePlateModal.error}
+                <p className="text-base sm:text-lg font-black text-amber-400 tracking-wider">
+                  MOMO-FREE-{(freePlateModal.category || 'MOM').substring(0, 3).toUpperCase()}-PASS
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setFreePlateModal(null)}
-                  className="w-full py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs uppercase border border-zinc-700"
-                >
-                  Close
-                </button>
-              </div>
-            )}
-
-            {!freePlateModal.loading && !freePlateModal.error && (
-              <div>
-                <div className="text-center mb-6">
-                  <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
-                    Free {freePlateModal.category} Plate
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-1">
-                    Show this digital pass to the chef at the truck counter to redeem.
-                  </p>
+                <div className="text-[10px] text-zinc-400 border-t border-zinc-800 pt-2 flex items-center justify-between">
+                  <span>HOLDER: {user?.email}</span>
+                  <span>5/5 STAMPS</span>
                 </div>
-
-                <div className="p-4 rounded-lg bg-zinc-900 border-2 border-dashed border-zinc-700 space-y-2 mb-6">
-                  <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                    <span>VOUCHER // PASS-CODE</span>
-                    <span className="text-emerald-400 font-bold">VERIFIED</span>
-                  </div>
-                  <p className="text-base sm:text-lg font-black text-amber-400 tracking-wider">
-                    MOMO-FREE-{(freePlateModal.category || 'MOM').substring(0, 3).toUpperCase()}-PASS
-                  </p>
-                  <div className="text-[10px] text-zinc-400 border-t border-zinc-800 pt-2 flex items-center justify-between">
-                    <span>HOLDER: {user?.email}</span>
-                    <span>5/5 STAMPS</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setFreePlateModal(null)}
-                  className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
-                >
-                  [ Close Voucher ]
-                </button>
               </div>
-            )}
+
+              <button
+                type="button"
+                onClick={() => setFreePlateModal(null)}
+                className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
+              >
+                [ Close Voucher ]
+              </button>
+            </div>
           </div>
         </div>
       )}
