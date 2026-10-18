@@ -8,7 +8,7 @@ const CATEGORIES = [
   {
     name: 'Steam Veg',
     icon: '🥟',
-    image: '/momos_iconpack/st_vg.jpg',
+    image: '/momos_iconpack/st_vg_pr_2.jpg',
     code: 'STM',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -16,7 +16,7 @@ const CATEGORIES = [
   {
     name: 'Afghani',
     icon: '🥘',
-    image: '/momos_iconpack/fr.jpg',
+    image: '/momos_iconpack/fr_pr_2.jpg',
     code: 'AFG',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -24,7 +24,7 @@ const CATEGORIES = [
   {
     name: 'Fried',
     icon: '🔥',
-    image: '/momos_iconpack/kr.jpg',
+    image: '/momos_iconpack/kr_pr_2.jpg',
     code: 'FRD',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -47,6 +47,26 @@ function UserDashboardContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [activeVoucherCategory, setActiveVoucherCategory] = useState(null);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (activeVoucherCategory) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setActiveVoucherCategory(null);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [activeVoucherCategory]);
 
   const fetchMyStamps = useCallback(async () => {
     if (!user) return;
@@ -526,7 +546,14 @@ function UserDashboardContent() {
       </div>
 
       {activeVoucherCategory && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setActiveVoucherCategory(null);
+            }
+          }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+        >
           <div className="bg-[#12141a] border-2 border-amber-400 rounded-xl p-6 sm:p-8 max-w-md w-full relative shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] font-mono">
             <button
               type="button"
