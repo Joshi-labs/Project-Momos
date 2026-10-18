@@ -3,10 +3,19 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import { Award, Flame, PlusCircle, Clock, Gift, RefreshCw, X, Loader2 } from 'lucide-react';
 
+import steamVegImg from '../../momos_iconpack/st_vg.jpg';
+import friedImg from '../../momos_iconpack/fr.jpg';
+import kurkureImg from '../../momos_iconpack/kr.jpg';
+
+const steamVegSrc = typeof steamVegImg === 'object' && steamVegImg?.src ? steamVegImg.src : steamVegImg;
+const afghaniSrc = typeof friedImg === 'object' && friedImg?.src ? friedImg.src : friedImg;
+const friedSrc = typeof kurkureImg === 'object' && kurkureImg?.src ? kurkureImg.src : kurkureImg;
+
 const CATEGORIES = [
   {
     name: 'Steam Veg',
     icon: '🥟',
+    image: steamVegSrc,
     code: 'STM',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -14,6 +23,7 @@ const CATEGORIES = [
   {
     name: 'Afghani',
     icon: '🥘',
+    image: afghaniSrc,
     code: 'AFG',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -21,6 +31,7 @@ const CATEGORIES = [
   {
     name: 'Fried',
     icon: '🔥',
+    image: friedSrc,
     code: 'FRD',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -260,7 +271,15 @@ function UserDashboardContent() {
                         : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500'
                     }`}
                   >
-                    <span className="text-2xl">{cat.icon}</span>
+                    {cat.image ? (
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        className="w-8 h-8 object-contain mix-blend-multiply"
+                      />
+                    ) : (
+                      <span className="text-2xl">{cat.icon}</span>
+                    )}
                     <span className="text-[11px] font-bold uppercase leading-tight">{cat.name}</span>
                   </button>
                 );
