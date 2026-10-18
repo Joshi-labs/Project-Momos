@@ -303,7 +303,7 @@ function UserDashboardContent() {
               Standing at the truck counter? Tap the momo style you ordered to submit a stamp verification request.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5 font-mono">
+            <div className="grid grid-cols-3 gap-2 mb-5 font-mono">
               {CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat.name;
                 return (
@@ -311,7 +311,7 @@ function UserDashboardContent() {
                     key={cat.name}
                     type="button"
                     onClick={() => setSelectedCategory(cat.name)}
-                    className={`py-3 px-2 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-1.5 active:scale-95 ${
+                    className={`py-3 px-2 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-1 active:scale-95 ${
                       isSelected
                         ? 'bg-amber-400 text-black border-black font-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]'
                         : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500'
@@ -326,9 +326,7 @@ function UserDashboardContent() {
                     ) : (
                       <span className="text-2xl">{cat.icon}</span>
                     )}
-                    <span className="text-[10px] sm:text-[11px] font-bold uppercase leading-tight text-center">
-                      {cat.name}
-                    </span>
+                    <span className="text-[11px] font-bold uppercase leading-tight">{cat.name}</span>
                   </button>
                 );
               })}
