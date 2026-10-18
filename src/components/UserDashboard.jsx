@@ -3,19 +3,11 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import { Award, Flame, PlusCircle, Clock, Gift, RefreshCw, X, Loader2 } from 'lucide-react';
 
-import steamVegImg from '../../momos_iconpack/st_vg.jpg';
-import friedImg from '../../momos_iconpack/fr.jpg';
-import kurkureImg from '../../momos_iconpack/kr.jpg';
-
-const steamVegSrc = typeof steamVegImg === 'object' && steamVegImg?.src ? steamVegImg.src : steamVegImg;
-const afghaniSrc = typeof friedImg === 'object' && friedImg?.src ? friedImg.src : friedImg;
-const friedSrc = typeof kurkureImg === 'object' && kurkureImg?.src ? kurkureImg.src : kurkureImg;
-
 const CATEGORIES = [
   {
     name: 'Steam Veg',
     icon: '🥟',
-    image: steamVegSrc,
+    image: '/momos_iconpack/st_vg.jpg',
     code: 'STM',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -23,7 +15,7 @@ const CATEGORIES = [
   {
     name: 'Afghani',
     icon: '🥘',
-    image: afghaniSrc,
+    image: '/momos_iconpack/fr.jpg',
     code: 'AFG',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -31,7 +23,7 @@ const CATEGORIES = [
   {
     name: 'Fried',
     icon: '🔥',
-    image: friedSrc,
+    image: '/momos_iconpack/kr.jpg',
     code: 'FRD',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
