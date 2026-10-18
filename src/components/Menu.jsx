@@ -17,22 +17,8 @@ const MENU_ITEMS = [
     link: '/user?category=Steam%20Veg',
   },
   {
-    category: 'Afghani',
-    code: 'AFG // 02',
-    badgeColor: 'bg-amber-950 text-amber-300 border-amber-700',
-    title: 'Creamy Afghani Momos',
-    price: '₹60',
-    servings: '8 PCS',
-    spiceLevel: '🌶️ CREAMY & SMOKY',
-    image: '/images/afghani.jpg',
-    description:
-      'Tandoor-charred dumplings smothered in rich cashew-cream, malai herbs, chaat masala, and melted butter. Rich, luscious, and deeply satisfying.',
-    highlights: ['Rich Cashew Malai', 'Tandoor Charred', 'Butter Drizzle', 'Chef Special'],
-    link: '/user?category=Afghani',
-  },
-  {
     category: 'Fried',
-    code: 'FRD // 03',
+    code: 'FRD // 02',
     badgeColor: 'bg-orange-950 text-orange-300 border-orange-700',
     title: 'Crispy Fried Momos',
     price: '₹60',
@@ -43,6 +29,62 @@ const MENU_ITEMS = [
       'Crisp golden exterior with juicy seasoned vegetables inside. Dusted generously with fiery peri-peri spices and served with our fire dip and cool mayo.',
     highlights: ['Extra Crunchy', 'Peri-Peri Dusted', 'Fiery Dip Included', 'Fresh Made on Order'],
     link: '/user?category=Fried',
+  },
+  {
+    category: 'Kurkure',
+    code: 'KRK // 03',
+    badgeColor: 'bg-amber-950 text-amber-300 border-amber-700',
+    title: 'Crunchy Kurkure Momos',
+    price: '₹70',
+    servings: '8 PCS',
+    spiceLevel: '🌶️🌶️ SUPER CRUNCHY',
+    image: '/momos_iconpack/kr.jpg',
+    description:
+      'Coated in our signature seasoned crunchy crust and fried to golden perfection. Served with fiery chili dip and creamy garlic mayo.',
+    highlights: ['Ultimate Crunch', 'Signature Batter', 'Double Fried', 'Chef Special'],
+    link: '/user?category=Kurkure',
+  },
+  {
+    category: 'Steamed Paneer',
+    code: 'SPN // 04',
+    badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-700',
+    title: 'Steamed Paneer Momos',
+    price: '₹70',
+    servings: '8 PCS',
+    spiceLevel: '🌶️ RICH & FRESH',
+    image: '/momos_iconpack/st_vg_pr_2.jpg',
+    description:
+      'Tender steamed dumplings stuffed with soft malai paneer, chopped bell peppers, herbs, and mild mountain seasonings.',
+    highlights: ['Fresh Malai Paneer', 'High Protein', 'Steamed Fresh', 'Mild & Juicy'],
+    link: '/user?category=Steamed%20Paneer',
+  },
+  {
+    category: 'Paneer Fried',
+    code: 'PFR // 05',
+    badgeColor: 'bg-orange-950 text-orange-300 border-orange-700',
+    title: 'Crispy Paneer Fried Momos',
+    price: '₹80',
+    servings: '8 PCS',
+    spiceLevel: '🌶️🌶️ CRISPY PANEER',
+    image: '/momos_iconpack/fr_pr_2.jpg',
+    description:
+      'Golden crisp exterior packed with spiced cottage cheese filling, tossed with hot peri-peri masala.',
+    highlights: ['Spiced Cottage Cheese', 'Crisp Coating', 'Peri-Peri Tossed', 'Piping Hot'],
+    link: '/user?category=Paneer%20Fried',
+  },
+  {
+    category: 'Paneer Kurkure',
+    code: 'PKR // 06',
+    badgeColor: 'bg-red-950 text-red-300 border-red-700',
+    title: 'Paneer Kurkure Momos',
+    price: '₹90',
+    servings: '8 PCS',
+    spiceLevel: '🌶️🌶️🌶️ CRUNCHY PANEER',
+    image: '/momos_iconpack/kr_pr_2.jpg',
+    description:
+      'Thick crumb-coated paneer momos fried to extreme crunchiness. The ultimate indulgent comfort plate from the food truck.',
+    highlights: ['Extra Flaky Crust', 'Loaded Paneer Core', 'Fiery Dip Included', 'Crowd Favorite'],
+    link: '/user?category=Paneer%20Kurkure',
   },
 ];
 
@@ -86,7 +128,7 @@ export default function Menu() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {MENU_ITEMS.map((item) => (
             <div
               key={item.category}

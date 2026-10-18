@@ -8,24 +8,48 @@ const CATEGORIES = [
   {
     name: 'Steam Veg',
     icon: '🥟',
-    image: '/momos_iconpack/st_vg_pr_2.jpg',
+    image: '/momos_iconpack/st_vg.jpg',
     code: 'STM',
-    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
-    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
-  },
-  {
-    name: 'Afghani',
-    icon: '🥘',
-    image: '/momos_iconpack/fr_pr_2.jpg',
-    code: 'AFG',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
   },
   {
     name: 'Fried',
     icon: '🔥',
-    image: '/momos_iconpack/kr_pr_2.jpg',
+    image: '/momos_iconpack/fr.jpg',
     code: 'FRD',
+    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
+    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
+  },
+  {
+    name: 'Kurkure',
+    icon: '⚡',
+    image: '/momos_iconpack/kr.jpg',
+    code: 'KRK',
+    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
+    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
+  },
+  {
+    name: 'Steamed Paneer',
+    icon: '🧀',
+    image: '/momos_iconpack/st_vg_pr_2.jpg',
+    code: 'SPN',
+    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
+    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
+  },
+  {
+    name: 'Paneer Fried',
+    icon: '🧆',
+    image: '/momos_iconpack/fr_pr_2.jpg',
+    code: 'PFR',
+    badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
+    stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
+  },
+  {
+    name: 'Paneer Kurkure',
+    icon: '💥',
+    image: '/momos_iconpack/kr_pr_2.jpg',
+    code: 'PKR',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
   },
@@ -103,22 +127,31 @@ function UserDashboardContent() {
   }, [fetchMyStamps, user?.id]);
 
   // Derive all stamp metrics in one clean pass
-  const stampCounts = { 'Steam Veg': 0, Afghani: 0, Fried: 0 };
+  const stampCounts = {
+    'Steam Veg': 0,
+    'Fried': 0,
+    'Kurkure': 0,
+    'Steamed Paneer': 0,
+    'Paneer Fried': 0,
+    'Paneer Kurkure': 0,
+  };
   let pendingClaim = null;
 
   for (const s of stamps) {
     if (s.status === 'pending' && !pendingClaim) {
       pendingClaim = s;
-    } else if (s.status === 'approved' && !s.claimed && stampCounts[s.category] !== undefined) {
-      stampCounts[s.category] += 1;
+    } else if (s.status === 'approved' && !s.claimed) {
+      if (stampCounts[s.category] !== undefined) {
+        stampCounts[s.category] += 1;
+      }
     }
   }
 
-  const totalStampsAll = stampCounts['Steam Veg'] + stampCounts['Afghani'] + stampCounts['Fried'];
-  const totalFreePlatesAvailable =
-    Math.floor(stampCounts['Steam Veg'] / 5) +
-    Math.floor(stampCounts['Afghani'] / 5) +
-    Math.floor(stampCounts['Fried'] / 5);
+  const totalStampsAll = Object.values(stampCounts).reduce((a, b) => a + b, 0);
+  const totalFreePlatesAvailable = Object.values(stampCounts).reduce(
+    (acc, count) => acc + Math.floor(count / 5),
+    0
+  );
 
   const recentStamps = [...stamps]
     .sort((a, b) => new Date(b.created || b.created_at || 0) - new Date(a.created || a.created_at || 0))
@@ -270,7 +303,7 @@ function UserDashboardContent() {
               Standing at the truck counter? Tap the momo style you ordered to submit a stamp verification request.
             </p>
 
-            <div className="grid grid-cols-3 gap-2 mb-5 font-mono">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5 font-mono">
               {CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat.name;
                 return (
@@ -278,7 +311,7 @@ function UserDashboardContent() {
                     key={cat.name}
                     type="button"
                     onClick={() => setSelectedCategory(cat.name)}
-                    className={`py-3 px-2 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-1 active:scale-95 ${
+                    className={`py-3 px-2 rounded-lg border-2 text-center transition-all flex flex-col items-center gap-1.5 active:scale-95 ${
                       isSelected
                         ? 'bg-amber-400 text-black border-black font-black shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]'
                         : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500'
@@ -293,7 +326,9 @@ function UserDashboardContent() {
                     ) : (
                       <span className="text-2xl">{cat.icon}</span>
                     )}
-                    <span className="text-[11px] font-bold uppercase leading-tight">{cat.name}</span>
+                    <span className="text-[10px] sm:text-[11px] font-bold uppercase leading-tight text-center">
+                      {cat.name}
+                    </span>
                   </button>
                 );
               })}
@@ -413,7 +448,7 @@ function UserDashboardContent() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {CATEGORIES.map((cat) => {
               const totalApproved = stampCounts[cat.name] || 0;
               const currentCycleStamps = totalApproved % 5;
@@ -428,7 +463,15 @@ function UserDashboardContent() {
                   <div>
                     <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-dashed border-zinc-800 font-mono">
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl">{cat.icon}</span>
+                        {cat.image ? (
+                          <TransparentMomoImage
+                            src={cat.image}
+                            alt={cat.name}
+                            className="w-7 h-7 object-contain"
+                          />
+                        ) : (
+                          <span className="text-2xl">{cat.icon}</span>
+                        )}
                         <div>
                           <h3 className="text-xs font-black uppercase text-white">{cat.name}</h3>
                           <span className="text-[10px] text-zinc-400">{totalApproved} Approved</span>
@@ -519,7 +562,19 @@ function UserDashboardContent() {
                     >
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">
-                          {s.category === 'Steam Veg' ? '🥟' : s.category === 'Afghani' ? '🥘' : '🔥'}
+                          {s.category === 'Steam Veg'
+                            ? '🥟'
+                            : s.category === 'Fried'
+                            ? '🔥'
+                            : s.category === 'Kurkure'
+                            ? '⚡'
+                            : s.category === 'Steamed Paneer'
+                            ? '🧀'
+                            : s.category === 'Paneer Fried'
+                            ? '🧆'
+                            : s.category === 'Paneer Kurkure'
+                            ? '💥'
+                            : '🥟'}
                         </span>
                         <div>
                           <p className="font-bold text-zinc-200">{s.category}</p>

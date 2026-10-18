@@ -136,7 +136,7 @@ function AuthContent() {
               <Award className="w-8 h-8 text-amber-400 mt-0.5 shrink-0" />
               <div>
                 <span className="text-xs font-bold text-white uppercase block">5 Stamps = 1 Free Plate</span>
-                <span className="text-[11px] text-zinc-400 font-sans">Accumulate stamps across Steam Veg, Afghani, or Fried.</span>
+                <span className="text-[11px] text-zinc-400 font-sans">Accumulate stamps across Veg, Kurkure, or Paneer momos.</span>
               </div>
             </div>
 

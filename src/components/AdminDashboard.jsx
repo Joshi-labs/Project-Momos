@@ -15,6 +15,27 @@ import {
   Gift,
 } from 'lucide-react';
 
+const ADMIN_CATEGORIES = [
+  { name: 'Steam Veg', shortName: 'Steam', icon: '🥟' },
+  { name: 'Fried', shortName: 'Fried', icon: '🔥' },
+  { name: 'Kurkure', shortName: 'Kurkure', icon: '⚡' },
+  { name: 'Steamed Paneer', shortName: 'Stm Pnr', icon: '🧀' },
+  { name: 'Paneer Fried', shortName: 'Pnr Frd', icon: '🧆' },
+  { name: 'Paneer Kurkure', shortName: 'Pnr Krk', icon: '💥' },
+];
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case 'Steam Veg': return '🥟';
+    case 'Fried': return '🔥';
+    case 'Kurkure': return '⚡';
+    case 'Steamed Paneer': return '🧀';
+    case 'Paneer Fried': return '🧆';
+    case 'Paneer Kurkure': return '💥';
+    default: return '🥟';
+  }
+};
+
 function AdminDashboardContent() {
   const { user, isAdmin, loading: authLoading } = useAuth();
 
@@ -460,11 +481,7 @@ function AdminDashboardContent() {
                       <div className="flex items-center justify-between mb-3 border-b-2 border-dashed border-zinc-800 pb-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-2xl">
-                            {stamp.category === 'Steam Veg'
-                              ? '🥟'
-                              : stamp.category === 'Afghani'
-                              ? '🥘'
-                              : '🔥'}
+                            {getCategoryIcon(stamp.category)}
                           </span>
                           <div>
                             <h2 className="text-xs font-black uppercase text-white">{stamp.category} Momos</h2>
@@ -554,9 +571,6 @@ function AdminDashboardContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 font-mono">
               {freePlateRequests.map((req) => {
                 const counts = req.category_counts || {};
-                const steamCount = counts['Steam Veg'] || 0;
-                const afgCount = counts['Afghani'] || 0;
-                const friedCount = counts['Fried'] || 0;
                 const customerDisplay = req.user?.name || req.user?.email || `User #${req.user_id}`;
                 const timestamp = req.created_at;
 
@@ -603,41 +617,24 @@ function AdminDashboardContent() {
                           Unclaimed Stamp Breakdown:
                         </span>
                         <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                          <div
-                            className={`p-2 rounded border ${
-                              steamCount >= 5
-                                ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
-                                : 'bg-zinc-900 border-zinc-800 text-zinc-400'
-                            }`}
-                          >
-                            <span className="text-base block">🥟</span>
-                            <span className="text-[9px] uppercase block truncate">Steam</span>
-                            <span className="text-xs font-black text-white">{steamCount}</span>
-                          </div>
-
-                          <div
-                            className={`p-2 rounded border ${
-                              afgCount >= 5
-                                ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
-                                : 'bg-zinc-900 border-zinc-800 text-zinc-400'
-                            }`}
-                          >
-                            <span className="text-base block">🥘</span>
-                            <span className="text-[9px] uppercase block truncate">Afghani</span>
-                            <span className="text-xs font-black text-white">{afgCount}</span>
-                          </div>
-
-                          <div
-                            className={`p-2 rounded border ${
-                              friedCount >= 5
-                                ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
-                                : 'bg-zinc-900 border-zinc-800 text-zinc-400'
-                            }`}
-                          >
-                            <span className="text-base block">🔥</span>
-                            <span className="text-[9px] uppercase block truncate">Fried</span>
-                            <span className="text-xs font-black text-white">{friedCount}</span>
-                          </div>
+                          {ADMIN_CATEGORIES.map((cat) => {
+                            const count = counts[cat.name] || 0;
+                            const isEligible = count >= 5;
+                            return (
+                              <div
+                                key={cat.name}
+                                className={`p-1.5 rounded border ${
+                                  isEligible
+                                    ? 'bg-amber-400/10 border-amber-400 text-amber-300 font-bold'
+                                    : 'bg-zinc-900 border-zinc-800 text-zinc-400'
+                                }`}
+                              >
+                                <span className="text-base block">{cat.icon}</span>
+                                <span className="text-[8px] uppercase block truncate">{cat.shortName}</span>
+                                <span className="text-xs font-black text-white">{count}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -688,7 +685,7 @@ function AdminDashboardContent() {
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="text-xl">
-                        {s.category === 'Steam Veg' ? '🥟' : s.category === 'Afghani' ? '🥘' : '🔥'}
+                        {getCategoryIcon(s.category)}
                       </span>
                       <div>
                         <p className="font-bold text-zinc-200">{s.category}</p>
@@ -759,11 +756,7 @@ function AdminDashboardContent() {
                 Select Category (5 Stamps Required):
               </span>
 
-              {[
-                { name: 'Steam Veg', icon: '🥟' },
-                { name: 'Afghani', icon: '🥘' },
-                { name: 'Fried', icon: '🔥' },
-              ].map((cat) => {
+              {ADMIN_CATEGORIES.map((cat) => {
                 const count = selectedRequestForRedeem.category_counts?.[cat.name] || 0;
                 const isEligible = count >= 5;
                 const isSelected = chosenCategory === cat.name;

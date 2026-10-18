@@ -406,7 +406,14 @@ def intent_to_get_free_plate(
         .all()
     )
 
-    category_counts = {"Steam Veg": 0, "Afghani": 0, "Fried": 0}
+    category_counts = {
+        "Steam Veg": 0,
+        "Fried": 0,
+        "Kurkure": 0,
+        "Steamed Paneer": 0,
+        "Paneer Fried": 0,
+        "Paneer Kurkure": 0,
+    }
     for s in unclaimed_stamps:
         category_counts[s.category] = category_counts.get(s.category, 0) + 1
 
