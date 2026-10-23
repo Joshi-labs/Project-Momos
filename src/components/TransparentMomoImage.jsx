@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const transparentCache = new Map();
 
-export default function TransparentMomoImage({ src, alt, className = '' }) {
+function TransparentMomoImage({ src, alt, className = '' }) {
   const [cleanSrc, setCleanSrc] = useState(() => transparentCache.get(src) || null);
 
   useEffect(() => {
@@ -121,4 +121,6 @@ export default function TransparentMomoImage({ src, alt, className = '' }) {
     />
   );
 }
+
+export default React.memo(TransparentMomoImage);
 

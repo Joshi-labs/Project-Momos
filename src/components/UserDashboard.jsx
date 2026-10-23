@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import { Award, Flame, PlusCircle, Clock, Gift, RefreshCw, X, Loader2 } from 'lucide-react';
@@ -55,6 +55,15 @@ const CATEGORIES = [
   },
 ];
 
+const VOUCHER_PASS_CODES = {
+  'Steam Veg': 'MOMO-STEAM-VEG-PASS',
+  'Fried': 'MOMO-FRIED-PASS',
+  'Kurkure': 'MOMO-KURKURE-PASS',
+  'Steamed Paneer': 'MOMO-STEAMED-PANEER-PASS',
+  'Paneer Fried': 'MOMO-PANEER-FRIED-PASS',
+  'Paneer Kurkure': 'MOMO-PANEER-KURKURE-PASS',
+};
+
 function UserDashboardContent() {
   const { user, loading } = useAuth();
 
@@ -72,31 +81,43 @@ function UserDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
   const [activeVoucherCategory, setActiveVoucherCategory] = useState(null);
 
-  // Prevent background scrolling when modal is open
+  // Close modal on Escape key without mutating body overflow (avoids layout shift and scrollbar flickering)
   useEffect(() => {
-    if (activeVoucherCategory) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
+    if (!activeVoucherCategory) return;
 
-      const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
-          setActiveVoucherCategory(null);
-        }
-      };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveVoucherCategory(null);
+      }
+    };
 
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-        document.body.style.overflow = originalOverflow || '';
-        window.removeEventListener('keydown', handleKeyDown);
-      };
-    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [activeVoucherCategory]);
 
   const fetchMyStamps = useCallback(async () => {
     if (!user) return;
     try {
       const data = await api.getMyStamps();
-      setStamps((prev) => (prev === data ? prev : (data || [])));
+      setStamps((prev) => {
+        // Prevent unnecessary state updates and DOM re-renders if stamps data is identical
+        if (Array.isArray(prev) && Array.isArray(data) && prev.length === data.length) {
+          const isSame = prev.every((p, idx) => {
+            const d = data[idx];
+            return (
+              p.id === d.id &&
+              p.status === d.status &&
+              p.claimed === d.claimed &&
+              p.category === d.category &&
+              p.count === d.count
+            );
+          });
+          if (isSame) return prev;
+        }
+        return data || [];
+      });
     } catch (err) {
       console.error('Failed to load stamps:', err);
     }
@@ -126,36 +147,46 @@ function UserDashboardContent() {
     };
   }, [fetchMyStamps, user?.id]);
 
-  // Derive all stamp metrics in one clean pass
-  const stampCounts = {
-    'Steam Veg': 0,
-    'Fried': 0,
-    'Kurkure': 0,
-    'Steamed Paneer': 0,
-    'Paneer Fried': 0,
-    'Paneer Kurkure': 0,
-  };
-  let pendingClaim = null;
+  // Derive all stamp metrics memoized to prevent unnecessary re-renders
+  const { stampCounts, pendingClaim, totalStampsAll, totalFreePlatesAvailable, recentStamps } = useMemo(() => {
+    const counts = {
+      'Steam Veg': 0,
+      'Fried': 0,
+      'Kurkure': 0,
+      'Steamed Paneer': 0,
+      'Paneer Fried': 0,
+      'Paneer Kurkure': 0,
+    };
+    let pending = null;
 
-  for (const s of stamps) {
-    if (s.status === 'pending' && !pendingClaim) {
-      pendingClaim = s;
-    } else if (s.status === 'approved' && !s.claimed) {
-      if (stampCounts[s.category] !== undefined) {
-        stampCounts[s.category] += 1;
+    for (const s of stamps) {
+      if (s.status === 'pending' && !pending) {
+        pending = s;
+      } else if (s.status === 'approved' && !s.claimed) {
+        if (counts[s.category] !== undefined) {
+          counts[s.category] += 1;
+        }
       }
     }
-  }
 
-  const totalStampsAll = Object.values(stampCounts).reduce((a, b) => a + b, 0);
-  const totalFreePlatesAvailable = Object.values(stampCounts).reduce(
-    (acc, count) => acc + Math.floor(count / 5),
-    0
-  );
+    const totalStamps = Object.values(counts).reduce((a, b) => a + b, 0);
+    const totalFreePlates = Object.values(counts).reduce(
+      (acc, count) => acc + Math.floor(count / 5),
+      0
+    );
 
-  const recentStamps = [...stamps]
-    .sort((a, b) => new Date(b.created || b.created_at || 0) - new Date(a.created || a.created_at || 0))
-    .slice(0, 5);
+    const recent = [...stamps]
+      .sort((a, b) => new Date(b.created || b.created_at || 0) - new Date(a.created || a.created_at || 0))
+      .slice(0, 5);
+
+    return {
+      stampCounts: counts,
+      pendingClaim: pending,
+      totalStampsAll: totalStamps,
+      totalFreePlatesAvailable: totalFreePlates,
+      recentStamps: recent,
+    };
+  }, [stamps]);
 
   const hasPendingClaim = Boolean(pendingClaim);
 
@@ -602,13 +633,13 @@ function UserDashboardContent() {
               setActiveVoucherCategory(null);
             }
           }}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
         >
           <div className="bg-[#12141a] border-2 border-amber-400 rounded-xl p-6 sm:p-8 max-w-md w-full relative shadow-[8px_8px_0px_0px_rgba(0,0,0,0.8)] font-mono">
             <button
               type="button"
               onClick={() => setActiveVoucherCategory(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -629,7 +660,7 @@ function UserDashboardContent() {
                   <span className="text-emerald-400 font-bold">VERIFIED</span>
                 </div>
                 <p className="text-base sm:text-lg font-black text-amber-400 tracking-wider">
-                  MOMO-FREE-{activeVoucherCategory.substring(0, 3).toUpperCase()}-PASS
+                  {VOUCHER_PASS_CODES[activeVoucherCategory] || `MOMO-${activeVoucherCategory.toUpperCase().replace(/\s+/g, '-')}-PASS`}
                 </p>
                 <div className="text-[10px] text-zinc-400 border-t border-zinc-800 pt-2 flex items-center justify-between">
                   <span>HOLDER: {user?.email}</span>
@@ -640,7 +671,7 @@ function UserDashboardContent() {
               <button
                 type="button"
                 onClick={() => setActiveVoucherCategory(null)}
-                className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
+                className="w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black cursor-pointer"
               >
                 [ Close Voucher ]
               </button>
