@@ -325,7 +325,7 @@ function AdminDashboardContent() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-lg bg-red-950 border-2 border-red-700 flex items-center justify-center text-red-400 shrink-0">
-              <ShieldAlert className="w-10 h-10" />
+              <ShieldAlert className="w-12 h-12" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -339,13 +339,8 @@ function AdminDashboardContent() {
             </div>
           </div>
 
-          {/* Polling & Refresh */}
-          <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full lg:w-auto">
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-2 rounded-lg text-xs text-zinc-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>LIVE SYNC</span>
-            </div>
-
+          {/* Polling */}
+          <div className="w-full lg:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -353,7 +348,7 @@ function AdminDashboardContent() {
                 setLastUpdated(new Date());
               }}
               disabled={loading}
-              className="ml-auto sm:ml-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-xs font-bold text-white active:scale-95 transition-all"
+              className="w-full lg:w-auto flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 border-2 border-zinc-700 text-xs font-bold text-white active:scale-[0.98] transition-all cursor-pointer shadow-sm"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : ''}`} />
               <span>Poll</span>
