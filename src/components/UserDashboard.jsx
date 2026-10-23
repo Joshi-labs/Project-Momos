@@ -559,21 +559,18 @@ function UserDashboardContent() {
                       className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className="text-lg">
-                          {s.category === 'Steam Veg'
-                            ? '🥟'
-                            : s.category === 'Fried'
-                            ? '🔥'
-                            : s.category === 'Kurkure'
-                            ? '⚡'
-                            : s.category === 'Steamed Paneer'
-                            ? '🧀'
-                            : s.category === 'Paneer Fried'
-                            ? '🧆'
-                            : s.category === 'Paneer Kurkure'
-                            ? '💥'
-                            : '🥟'}
-                        </span>
+                        {(() => {
+                          const catObj = CATEGORIES.find((c) => c.name === s.category);
+                          return catObj?.image ? (
+                            <TransparentMomoImage
+                              src={catObj.image}
+                              alt={s.category}
+                              className="w-6 h-6 object-contain shrink-0"
+                            />
+                          ) : (
+                            <span className="text-lg">🥟</span>
+                          );
+                        })()}
                         <div>
                           <p className="font-bold text-zinc-200">{s.category}</p>
                           <span className="text-[10px] text-zinc-500">{dateStr}</span>
