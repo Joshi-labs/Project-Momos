@@ -268,7 +268,6 @@ function AdminDashboardContent() {
   };
 
   const approvedCount = historyStamps.filter((s) => s.status === 'approved').length;
-  const rejectedCount = historyStamps.filter((s) => s.status === 'rejected').length;
 
   if (authLoading) {
     return (
@@ -362,26 +361,33 @@ function AdminDashboardContent() {
           </div>
         </div>
 
-        {/* Boxy Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-zinc-800">
-          <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
-            <span className="text-[10px] text-zinc-400 block uppercase font-bold">Pending Queue</span>
-            <span className="text-xl font-black text-amber-400">{pendingStamps.length}</span>
+        {/* Boxy Metrics - 1 Row 3 Columns */}
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-4 mt-5 pt-5 border-t border-zinc-800">
+          <div className="bg-zinc-900/90 border-2 border-zinc-800 p-3 sm:p-4 rounded-xl text-center flex flex-col items-center justify-center shadow-sm hover:border-zinc-700 transition-colors">
+            <span className="text-[9px] sm:text-[11px] text-zinc-400 block uppercase font-bold tracking-wider truncate max-w-full">
+              Pending Queue
+            </span>
+            <span className="text-lg sm:text-2xl font-black text-amber-400 mt-1">
+              {pendingStamps.length}
+            </span>
           </div>
 
-          <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
-            <span className="text-[10px] text-zinc-400 block uppercase font-bold">Free Plate Reqs</span>
-            <span className="text-xl font-black text-amber-400">{freePlateRequests.length}</span>
+          <div className="bg-zinc-900/90 border-2 border-zinc-800 p-3 sm:p-4 rounded-xl text-center flex flex-col items-center justify-center shadow-sm hover:border-zinc-700 transition-colors">
+            <span className="text-[9px] sm:text-[11px] text-zinc-400 block uppercase font-bold tracking-wider truncate max-w-full">
+              Free Plate Reqs
+            </span>
+            <span className="text-lg sm:text-2xl font-black text-amber-400 mt-1">
+              {freePlateRequests.length}
+            </span>
           </div>
 
-          <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
-            <span className="text-[10px] text-zinc-400 block uppercase font-bold">Approved</span>
-            <span className="text-xl font-black text-emerald-400">{approvedCount}</span>
-          </div>
-
-          <div className="bg-zinc-900 border-2 border-zinc-800 p-3 rounded-lg text-center">
-            <span className="text-[10px] text-zinc-400 block uppercase font-bold">Rejected</span>
-            <span className="text-xl font-black text-zinc-400">{rejectedCount}</span>
+          <div className="bg-zinc-900/90 border-2 border-zinc-800 p-3 sm:p-4 rounded-xl text-center flex flex-col items-center justify-center shadow-sm hover:border-zinc-700 transition-colors">
+            <span className="text-[9px] sm:text-[11px] text-zinc-400 block uppercase font-bold tracking-wider truncate max-w-full">
+              Approved
+            </span>
+            <span className="text-lg sm:text-2xl font-black text-emerald-400 mt-1">
+              {approvedCount}
+            </span>
           </div>
         </div>
       </div>
@@ -405,15 +411,15 @@ function AdminDashboardContent() {
       )}
 
       {/* Boxy Tabs */}
-      <div className="flex items-center justify-between border-b-2 border-zinc-800 pb-2 font-mono">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b-2 border-zinc-800 pb-2 font-mono">
+        <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('pending')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border cursor-pointer ${
               activeTab === 'pending'
-                ? 'bg-amber-400 text-black border-amber-400'
-                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
+                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700'
             }`}
           >
             <span>Pending ({pendingStamps.length})</span>
@@ -422,10 +428,10 @@ function AdminDashboardContent() {
           <button
             type="button"
             onClick={() => setActiveTab('requests')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border cursor-pointer ${
               activeTab === 'requests'
-                ? 'bg-amber-400 text-black border-amber-400'
-                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
+                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700'
             }`}
           >
             <span>Request ({freePlateRequests.length})</span>
@@ -434,17 +440,17 @@ function AdminDashboardContent() {
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 border cursor-pointer ${
               activeTab === 'history'
-                ? 'bg-zinc-800 text-white border-zinc-700'
-                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                ? 'bg-zinc-800 text-white border-zinc-700 shadow-sm'
+                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:border-zinc-700'
             }`}
           >
             <span>History ({historyStamps.length})</span>
           </button>
         </div>
 
-        <span className="text-[10px] text-zinc-500 hidden sm:inline">
+        <span className="text-[10px] text-zinc-500 hidden sm:inline shrink-0">
           SYNC: {lastUpdated.toLocaleTimeString()}
         </span>
       </div>
