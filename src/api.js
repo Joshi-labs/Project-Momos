@@ -323,7 +323,7 @@ export const api = {
       return await request('/stamps/my', { method: 'GET' });
     } catch (err) {
       console.error('Error getting stamps:', formatPbError(err));
-      return [];
+      return null;
     }
   },
 

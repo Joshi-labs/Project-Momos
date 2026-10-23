@@ -81,71 +81,74 @@ function UserDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
   const [activeVoucherCategory, setActiveVoucherCategory] = useState(null);
 
-  // Close modal on Escape key without mutating body overflow (avoids layout shift and scrollbar flickering)
+  // Lock background scrolling when modal is active, and handle Escape key
   useEffect(() => {
-    if (!activeVoucherCategory) return;
+    if (activeVoucherCategory) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
 
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setActiveVoucherCategory(null);
-      }
-    };
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setActiveVoucherCategory(null);
+        }
+      };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = prevOverflow || '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
   }, [activeVoucherCategory]);
 
   const fetchMyStamps = useCallback(async () => {
-    if (!user) return;
     try {
       const data = await api.getMyStamps();
-      setStamps((prev) => {
-        // Prevent unnecessary state updates and DOM re-renders if stamps data is identical
-        if (Array.isArray(prev) && Array.isArray(data) && prev.length === data.length) {
-          const isSame = prev.every((p, idx) => {
-            const d = data[idx];
-            return (
-              p.id === d.id &&
-              p.status === d.status &&
-              p.claimed === d.claimed &&
-              p.category === d.category &&
-              p.count === d.count
-            );
-          });
-          if (isSame) return prev;
-        }
-        return data || [];
-      });
+      if (Array.isArray(data)) {
+        setStamps((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
+      }
     } catch (err) {
       console.error('Failed to load stamps:', err);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
-    fetchMyStamps();
+    if (!user?.id) return;
+
+    let isMounted = true;
+    let isFetching = false;
+
+    const safeFetch = async () => {
+      if (isFetching || !isMounted) return;
+      isFetching = true;
+      try {
+        const data = await api.getMyStamps();
+        if (isMounted && Array.isArray(data)) {
+          setStamps((prev) => (JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
+        }
+      } catch (err) {
+        console.error('Failed to load stamps:', err);
+      } finally {
+        isFetching = false;
+      }
+    };
+
+    safeFetch();
+    const interval = setInterval(safeFetch, 2500);
 
     const unsub = api.subscribeStamps((e) => {
-      // Don't refetch on local free plate intent broadcasts (stamps haven't changed)
       if (e.action === 'free_plate_intent') return;
-      if (e.record && (!e.record.user || e.record.user === user?.id)) {
-        fetchMyStamps();
+      if (e.record && (!e.record.user || e.record.user === user.id)) {
+        safeFetch();
       }
     });
 
-    const interval = setInterval(fetchMyStamps, 2500);
-
     return () => {
+      isMounted = false;
       clearInterval(interval);
-      if (typeof unsub === 'function') {
-        unsub();
-      } else {
-        api.unsubscribeStamps();
-      }
+      if (typeof unsub === 'function') unsub();
     };
-  }, [fetchMyStamps, user?.id]);
+  }, [user?.id]);
 
   // Derive all stamp metrics memoized to prevent unnecessary re-renders
   const { stampCounts, pendingClaim, totalStampsAll, totalFreePlatesAvailable, recentStamps } = useMemo(() => {
