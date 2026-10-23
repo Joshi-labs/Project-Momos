@@ -14,15 +14,21 @@ import {
   ArrowLeft,
   Gift,
 } from 'lucide-react';
+import TransparentMomoImage from './TransparentMomoImage';
 
 const ADMIN_CATEGORIES = [
-  { name: 'Steam Veg', shortName: 'Steam', icon: '🥟' },
-  { name: 'Fried', shortName: 'Fried', icon: '🔥' },
-  { name: 'Kurkure', shortName: 'Kurkure', icon: '⚡' },
-  { name: 'Steamed Paneer', shortName: 'Stm Pnr', icon: '🧀' },
-  { name: 'Paneer Fried', shortName: 'Pnr Frd', icon: '🧆' },
-  { name: 'Paneer Kurkure', shortName: 'Pnr Krk', icon: '💥' },
+  { name: 'Steam Veg', shortName: 'Steam', icon: '🥟', image: '/momos_iconpack/st_vg.jpg' },
+  { name: 'Fried', shortName: 'Fried', icon: '🔥', image: '/momos_iconpack/fr.jpg' },
+  { name: 'Kurkure', shortName: 'Kurkure', icon: '⚡', image: '/momos_iconpack/kr.jpg' },
+  { name: 'Steamed Paneer', shortName: 'Stm Pnr', icon: '🧀', image: '/momos_iconpack/st_vg_pr_2.jpg' },
+  { name: 'Paneer Fried', shortName: 'Pnr Frd', icon: '🧆', image: '/momos_iconpack/fr_pr_2.jpg' },
+  { name: 'Paneer Kurkure', shortName: 'Pnr Krk', icon: '💥', image: '/momos_iconpack/kr_pr_2.jpg' },
 ];
+
+const getCategoryImage = (category) => {
+  const cat = ADMIN_CATEGORIES.find((c) => c.name === category);
+  return cat?.image || null;
+};
 
 const getCategoryIcon = (category) => {
   switch (category) {
@@ -294,17 +300,10 @@ function AdminDashboardContent() {
           </span>
           <h2 className="text-xl font-black text-white uppercase mb-2">Chef Admin Required</h2>
           <p className="text-xs text-zinc-400 font-sans max-w-sm mx-auto mb-6 leading-relaxed">
-            This verification console is restricted to food truck managers and staff. Your account ({user.email}) is currently set as customer role.
+            This verification console is restricted to food truck managers and staff.
           </p>
 
           <div className="space-y-4 text-left">
-            <div className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 font-mono">
-              <span className="text-amber-400 font-bold block mb-1">HOW TO PROMOTE IN POSTGRESQL:</span>
-              <p className="text-zinc-300 block bg-black/40 p-2 rounded border border-zinc-800">
-                In PostgreSQL terminal or pgAdmin &rarr; run: <code>UPDATE users SET role = &apos;admin&apos; WHERE email = &apos;{user.email}&apos;;</code>
-              </p>
-            </div>
-
             <a
               href="/user"
               className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black"
@@ -324,8 +323,12 @@ function AdminDashboardContent() {
       <div className="bg-[#12141a] border-2 border-zinc-800 rounded-xl p-5 sm:p-7 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.4)] font-mono">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-lg bg-red-950 border-2 border-red-700 flex items-center justify-center text-red-400 shrink-0">
-              <ShieldAlert className="w-12 h-12" />
+            <div className="w-14 h-14 rounded-lg border-2 border-black overflow-hidden shrink-0 bg-red-600">
+              <img
+                src={`https://api.dicebear.com/10.x/avataaars/svg?backgroundColor=dc2626&seed=${encodeURIComponent(user?.name || user?.email || 'Admin')}`}
+                alt="Admin avatar"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -481,9 +484,20 @@ function AdminDashboardContent() {
                       {/* Stamp Header */}
                       <div className="flex items-center justify-between mb-3 border-b-2 border-dashed border-zinc-800 pb-2.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl">
-                            {getCategoryIcon(stamp.category)}
-                          </span>
+                          {(() => {
+                            const img = getCategoryImage(stamp.category);
+                            return img ? (
+                              <TransparentMomoImage
+                                src={img}
+                                alt={stamp.category}
+                                className="w-7 h-7 object-contain shrink-0"
+                              />
+                            ) : (
+                              <span className="text-2xl">
+                                {getCategoryIcon(stamp.category)}
+                              </span>
+                            );
+                          })()}
                           <div>
                             <h2 className="text-xs font-black uppercase text-white">{stamp.category} Momos</h2>
                             <span className="text-[10px] text-zinc-400 flex items-center gap-1 font-mono">
@@ -630,7 +644,17 @@ function AdminDashboardContent() {
                                     : 'bg-zinc-900 border-zinc-800 text-zinc-400'
                                 }`}
                               >
-                                <span className="text-base block">{cat.icon}</span>
+                                {cat.image ? (
+                                  <div className="flex justify-center my-0.5">
+                                    <TransparentMomoImage
+                                      src={cat.image}
+                                      alt={cat.name}
+                                      className="w-5 h-5 object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <span className="text-base block">{cat.icon}</span>
+                                )}
                                 <span className="text-[8px] uppercase block truncate">{cat.shortName}</span>
                                 <span className="text-xs font-black text-white">{count}</span>
                               </div>
@@ -685,9 +709,20 @@ function AdminDashboardContent() {
                     className="flex items-center justify-between p-3.5 rounded-lg bg-[#12141a] border-2 border-zinc-800 text-xs"
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-xl">
-                        {getCategoryIcon(s.category)}
-                      </span>
+                      {(() => {
+                        const img = getCategoryImage(s.category);
+                        return img ? (
+                          <TransparentMomoImage
+                            src={img}
+                            alt={s.category}
+                            className="w-6 h-6 object-contain shrink-0"
+                          />
+                        ) : (
+                          <span className="text-xl">
+                            {getCategoryIcon(s.category)}
+                          </span>
+                        );
+                      })()}
                       <div>
                         <p className="font-bold text-zinc-200">{s.category}</p>
                         <span className="text-[10px] text-zinc-500">{formatRelativeTime(timestamp)}</span>
@@ -777,7 +812,15 @@ function AdminDashboardContent() {
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{cat.icon}</span>
+                      {cat.image ? (
+                        <TransparentMomoImage
+                          src={cat.image}
+                          alt={cat.name}
+                          className="w-7 h-7 object-contain shrink-0"
+                        />
+                      ) : (
+                        <span className="text-xl">{cat.icon}</span>
+                      )}
                       <div>
                         <span className="text-xs font-bold uppercase block">{cat.name} Momos</span>
                         <span className="text-[10px] block opacity-80">
