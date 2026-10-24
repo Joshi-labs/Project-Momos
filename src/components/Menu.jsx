@@ -105,7 +105,7 @@ const ADDONS = [
   },
   {
     name: 'Chilled Cold Drink',
-    price: '20',
+    price: '₹20',
     tag: 'BEVERAGE',
     icon: Coffee,
     desc: 'Chilled soda can (Thums Up / Sprite) 250ml.',

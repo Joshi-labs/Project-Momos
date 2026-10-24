@@ -36,19 +36,19 @@ const SIGNATURE_PLATES = [
     link: '/user?category=Steam%20Veg',
   },
   {
-    name: 'Crunchy Kurkure Momos',
-    price: '₹70 - 8 PCS',
-    desc: 'Coated in our signature crunchy crust and fried to golden perfection with spicy dip.',
-    image: '/images/kurkure.jpg',
-    link: '/user?category=Kurkure',
-  },
-  {
     name: 'Crispy Fried Momos',
     price: '₹60 - 8 PCS',
     desc: 'Crisp golden exterior with juicy spiced filling inside, tossed in peri-peri seasonings.',
     image: '/images/fried.jpg',
     link: '/user?category=Fried',
-  },
+  },  
+  {
+    name: 'Crunchy Kurkure Momos',
+    price: '₹70 - 8 PCS',
+    desc: 'Coated in our signature crunchy crust and fried to golden perfection with spicy dip.',
+    image: '/images/kurkure.jpg',
+    link: '/user?category=Kurkure',
+  }
 ];
 
 function HomeContent() {
