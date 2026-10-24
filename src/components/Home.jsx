@@ -39,7 +39,7 @@ const SIGNATURE_PLATES = [
     name: 'Crunchy Kurkure Momos',
     price: '₹70 - 8 PCS',
     desc: 'Coated in our signature crunchy crust and fried to golden perfection with spicy dip.',
-    image: '/momos_iconpack/kr.jpg',
+    image: '/images/kurkure.jpg',
     link: '/user?category=Kurkure',
   },
   {

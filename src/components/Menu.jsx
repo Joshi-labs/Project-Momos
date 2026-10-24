@@ -9,7 +9,7 @@ const MENU_ITEMS = [
     title: 'Steam Veg Momos',
     price: '₹50',
     servings: '8 PCS',
-    spiceLevel: '🌶️ MILD & FRESH',
+    spiceLevel: '🌶️ MILD',
     image: '/images/veg.jpg',
     description:
       'Hand-rolled dumplings packed with freshly shredded mountain greens, ginger, and aromatic spices. Steamed fresh to order and served piping hot with red chili sesame dip.',
@@ -37,8 +37,8 @@ const MENU_ITEMS = [
     title: 'Crunchy Kurkure Momos',
     price: '₹70',
     servings: '8 PCS',
-    spiceLevel: '🌶️🌶️ SUPER CRUNCHY',
-    image: '/momos_iconpack/kr.jpg',
+    spiceLevel: '🌶️🌶️🌶️ SUPER CRUNCHY',
+    image: '/images/kurkure.jpg',
     description:
       'Coated in our signature seasoned crunchy crust and fried to golden perfection. Served with fiery chili dip and creamy garlic mayo.',
     highlights: ['Ultimate Crunch', 'Signature Batter', 'Double Fried', 'Chef Special'],
@@ -51,8 +51,8 @@ const MENU_ITEMS = [
     title: 'Steamed Paneer Momos',
     price: '₹70',
     servings: '8 PCS',
-    spiceLevel: '🌶️ RICH & FRESH',
-    image: '/momos_iconpack/st_vg_pr_2.jpg',
+    spiceLevel: '🌶️ PANEER',
+    image: '/images/veg.jpg',
     description:
       'Tender steamed dumplings stuffed with soft malai paneer, chopped bell peppers, herbs, and mild mountain seasonings.',
     highlights: ['Fresh Malai Paneer', 'High Protein', 'Steamed Fresh', 'Mild & Juicy'],
@@ -66,7 +66,7 @@ const MENU_ITEMS = [
     price: '₹80',
     servings: '8 PCS',
     spiceLevel: '🌶️🌶️ CRISPY PANEER',
-    image: '/momos_iconpack/fr_pr_2.jpg',
+    image: '/images/fried.jpg',
     description:
       'Golden crisp exterior packed with spiced cottage cheese filling, tossed with hot peri-peri masala.',
     highlights: ['Spiced Cottage Cheese', 'Crisp Coating', 'Peri-Peri Tossed', 'Piping Hot'],
@@ -80,7 +80,7 @@ const MENU_ITEMS = [
     price: '₹90',
     servings: '8 PCS',
     spiceLevel: '🌶️🌶️🌶️ CRUNCHY PANEER',
-    image: '/momos_iconpack/kr_pr_2.jpg',
+    image: '/images/kurkure.jpg',
     description:
       'Thick crumb-coated paneer momos fried to extreme crunchiness. The ultimate indulgent comfort plate from the food truck.',
     highlights: ['Extra Flaky Crust', 'Loaded Paneer Core', 'Fiery Dip Included', 'Crowd Favorite'],
@@ -105,7 +105,7 @@ const ADDONS = [
   },
   {
     name: 'Chilled Cold Drink',
-    price: 'FREE',
+    price: '20',
     tag: 'BEVERAGE',
     icon: Coffee,
     desc: 'Chilled soda can (Thums Up / Sprite) 250ml.',
