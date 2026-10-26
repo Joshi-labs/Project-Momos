@@ -649,7 +649,7 @@ function UserDashboardContent() {
             <div>
               <div className="text-center mb-6">
                 <h3 className="text-xl sm:text-2xl font-black text-white uppercase">
-                  Free {activeVoucherCategory} Plate
+                  {activeVoucherCategory}
                 </h3>
                 <p className="text-xs text-zinc-400 mt-1">
                   Show this digital pass to the chef at the truck counter to redeem.
