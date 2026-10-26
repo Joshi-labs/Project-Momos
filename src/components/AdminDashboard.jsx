@@ -14,15 +14,14 @@ import {
   ArrowLeft,
   Gift,
 } from 'lucide-react';
-import TransparentMomoImage from './TransparentMomoImage';
 
 const ADMIN_CATEGORIES = [
-  { name: 'Steam Veg', shortName: 'Steam', icon: '🥟', image: '/momos_iconpack/st_vg.jpg' },
-  { name: 'Fried', shortName: 'Fried', icon: '🔥', image: '/momos_iconpack/fr.jpg' },
-  { name: 'Kurkure', shortName: 'Kurkure', icon: '⚡', image: '/momos_iconpack/kr.jpg' },
-  { name: 'Steamed Paneer', shortName: 'Stm Pnr', icon: '🧀', image: '/momos_iconpack/st_vg_pr_2.jpg' },
-  { name: 'Paneer Fried', shortName: 'Pnr Frd', icon: '🧆', image: '/momos_iconpack/fr_pr_2.jpg' },
-  { name: 'Paneer Kurkure', shortName: 'Pnr Krk', icon: '💥', image: '/momos_iconpack/kr_pr_2.jpg' },
+  { name: 'Steam Veg', shortName: 'Steam', icon: '🥟', image: '/momos_iconpack/128/st_vg.png' },
+  { name: 'Fried', shortName: 'Fried', icon: '🔥', image: '/momos_iconpack/128/fr.png' },
+  { name: 'Kurkure', shortName: 'Kurkure', icon: '⚡', image: '/momos_iconpack/128/kr.png' },
+  { name: 'Steamed Paneer', shortName: 'Stm Pnr', icon: '🧀', image: '/momos_iconpack/128/st_vg_pr_2.png' },
+  { name: 'Paneer Fried', shortName: 'Pnr Frd', icon: '🧆', image: '/momos_iconpack/128/fr_pr_2.png' },
+  { name: 'Paneer Kurkure', shortName: 'Pnr Krk', icon: '💥', image: '/momos_iconpack/128/kr_pr_2.png' },
 ];
 
 const getCategoryImage = (category) => {
@@ -487,7 +486,7 @@ function AdminDashboardContent() {
                           {(() => {
                             const img = getCategoryImage(stamp.category);
                             return img ? (
-                              <TransparentMomoImage
+                              <img
                                 src={img}
                                 alt={stamp.category}
                                 className="w-7 h-7 object-contain shrink-0"
@@ -646,7 +645,7 @@ function AdminDashboardContent() {
                               >
                                 {cat.image ? (
                                   <div className="flex justify-center my-0.5">
-                                    <TransparentMomoImage
+                                    <img
                                       src={cat.image}
                                       alt={cat.name}
                                       className="w-5 h-5 object-contain"
@@ -712,7 +711,7 @@ function AdminDashboardContent() {
                       {(() => {
                         const img = getCategoryImage(s.category);
                         return img ? (
-                          <TransparentMomoImage
+                          <img
                             src={img}
                             alt={s.category}
                             className="w-6 h-6 object-contain shrink-0"
@@ -813,7 +812,7 @@ function AdminDashboardContent() {
                   >
                     <div className="flex items-center gap-2.5">
                       {cat.image ? (
-                        <TransparentMomoImage
+                        <img
                           src={cat.image}
                           alt={cat.name}
                           className="w-7 h-7 object-contain shrink-0"

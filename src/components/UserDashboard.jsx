@@ -2,13 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import { Award, Flame, PlusCircle, Clock, Gift, RefreshCw, X, Loader2 } from 'lucide-react';
-import TransparentMomoImage from './TransparentMomoImage';
 
 const CATEGORIES = [
   {
     name: 'Steam Veg',
     icon: '🥟',
-    image: '/momos_iconpack/st_vg.jpg',
+    image: '/momos_iconpack/128/st_vg.png',
     code: 'STM',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -16,7 +15,7 @@ const CATEGORIES = [
   {
     name: 'Fried',
     icon: '🔥',
-    image: '/momos_iconpack/fr.jpg',
+    image: '/momos_iconpack/128/fr.png',
     code: 'FRD',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -24,7 +23,7 @@ const CATEGORIES = [
   {
     name: 'Kurkure',
     icon: '⚡',
-    image: '/momos_iconpack/kr.jpg',
+    image: '/momos_iconpack/128/kr.png',
     code: 'KRK',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -32,7 +31,7 @@ const CATEGORIES = [
   {
     name: 'Steamed Paneer',
     icon: '🧀',
-    image: '/momos_iconpack/st_vg_pr_2.jpg',
+    image: '/momos_iconpack/128/st_vg_pr_2.png',
     code: 'SPN',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -40,7 +39,7 @@ const CATEGORIES = [
   {
     name: 'Paneer Fried',
     icon: '🧆',
-    image: '/momos_iconpack/fr_pr_2.jpg',
+    image: '/momos_iconpack/128/fr_pr_2.png',
     code: 'PFR',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -48,7 +47,7 @@ const CATEGORIES = [
   {
     name: 'Paneer Kurkure',
     icon: '💥',
-    image: '/momos_iconpack/kr_pr_2.jpg',
+    image: '/momos_iconpack/128/kr_pr_2.png',
     code: 'PKR',
     badgeClass: 'bg-amber-950 text-amber-300 border-amber-700',
     stampBg: 'bg-amber-400 text-black border-2 border-black font-black',
@@ -352,7 +351,7 @@ function UserDashboardContent() {
                     }`}
                   >
                     {cat.image ? (
-                      <TransparentMomoImage
+                      <img
                         src={cat.image}
                         alt={cat.name}
                         className="w-10 h-10 object-contain"
@@ -496,7 +495,7 @@ function UserDashboardContent() {
                     <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-dashed border-zinc-800 font-mono">
                       <div className="flex items-center gap-2">
                         {cat.image ? (
-                          <TransparentMomoImage
+                          <img
                             src={cat.image}
                             alt={cat.name}
                             className="w-7 h-7 object-contain"
@@ -596,7 +595,7 @@ function UserDashboardContent() {
                         {(() => {
                           const catObj = CATEGORIES.find((c) => c.name === s.category);
                           return catObj?.image ? (
-                            <TransparentMomoImage
+                            <img
                               src={catObj.image}
                               alt={s.category}
                               className="w-6 h-6 object-contain shrink-0"
